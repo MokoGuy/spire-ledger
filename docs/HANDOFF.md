@@ -12,8 +12,7 @@ Read with `CLAUDE.md` (architecture, testing) and `docs/PUBLISHING.md` (release 
   - Party damage HUD only **next to the names** in the party list (`party_hud` list/off, N toggles);
     the "above the characters" and "both" variants were removed at the user's request.
   - Marketing brief `docs/marketing/BRIEF.md`; test hooks below.
-- **Uncommitted at handoff:** `scripts/dev/sts2.py` autoplay, `CardInsight.cs` history hook, BRIEF edits,
-  this file — commit them first.
+- Everything is committed (last: "chore: handoff notes…"); 11+ commits ahead of `origin/main`.
 
 ## In progress: new screenshots (Workshop + GitHub)
 
