@@ -18,6 +18,8 @@ Usage: python scripts/dev/sts2.py <command> [args]
   shot <name>                  save the viewport to %TEMP%/sts2shots/<name>.png
   fight [max_rounds]           auto-play the current fight: attacks on the weakest enemy, skills on self,
                                then end turn, until the fight is over (simple, deterministic policy)
+  autoplay FLOOR [pick=I]      play the run until FLOOR is reached (fights, map, events, rewards, rest,
+                               shop) with simple deterministic choices; pick=I takes card reward I
   log [pattern]                print [SpireLedger] lines (or lines matching pattern) from the game log
 """
 import json
@@ -174,6 +176,80 @@ def auto_fight(max_rounds=30):
     return "timeout"
 
 
+def ok(r):
+    return isinstance(r, dict) and r.get("status") == "ok"
+
+
+def try_indexes(action, key="index", n=4, **extra):
+    for i in range(n):
+        if ok(act(action, **{key: i}, **extra)):
+            return True
+    return False
+
+
+def autoplay(target_floor, pick=0, max_steps=900):
+    """Walk the run like a patient player: fight with the auto-fight policy, take the first map node /
+    event option / rest option, claim every reward (card reward `pick`), leave shops. Stops on reaching
+    `target_floor` outside combat, at game over, or after max_steps."""
+    last, same = None, 0
+    for _ in range(max_steps):
+        try:
+            st = get_json()
+        except Exception:
+            time.sleep(1); continue
+        t = st.get("state_type")
+        floor = (st.get("run") or {}).get("floor", 0)
+        if t in ("game_over",):
+            return "game_over"
+        if floor >= target_floor and t in ("map", "event", "rewards", "rest_site", "shop", "treasure"):
+            return f"floor {floor} ({t})"
+        key = (t, floor, json.dumps(st.get("player", {}).get("hand", []))[:200])
+        same = same + 1 if key == last else 0
+        last = key
+        if t in ("monster", "elite", "boss"):
+            auto_fight(1)
+        elif t == "rewards":
+            r = st.get("rewards") or {}
+            items = r.get("items") if isinstance(r, dict) else r
+            done = False
+            for i, it in enumerate(items or []):
+                if ok(act("claim_reward", index=i)):
+                    done = True; break
+            if not done:
+                act("proceed")
+        elif t == "card_reward":
+            if not ok(act("select_card_reward", card_index=pick)):
+                act("skip_card_reward")
+        elif t == "map":
+            try_indexes("choose_map_node")
+        elif t == "event":
+            if not try_indexes("choose_event_option"):
+                act("advance_dialogue"); act("proceed")
+        elif t == "rest_site":
+            if not try_indexes("choose_rest_option"):
+                act("proceed")
+        elif t in ("shop", "fake_merchant"):
+            act("proceed")
+        elif t == "treasure":
+            if not try_indexes("claim_treasure_relic"):
+                act("proceed")
+        elif t == "relic_select":
+            if not try_indexes("select_relic"):
+                act("skip_relic_selection")
+        elif t in ("card_select", "hand_select"):
+            if not try_indexes("select_card") and not try_indexes("combat_select_card", key="card_index"):
+                pass
+            act("confirm_selection"); act("combat_confirm_selection")
+        elif t == "bundle_select":
+            try_indexes("select_bundle"); act("confirm_bundle_selection")
+        else:
+            act("proceed")
+        if same > 25:  # stuck: nudge forward
+            act("proceed"); act("advance_dialogue"); same = 0
+        time.sleep(0.6)
+    return "max_steps"
+
+
 def main(argv):
     sys.stdout.reconfigure(encoding="utf-8")
     if not argv:
@@ -202,6 +278,9 @@ def main(argv):
         print(json.dumps(act("screenshot", name=rest[0] if rest else "shot"), indent=2))
     elif cmd == "fight":
         print(auto_fight(int(rest[0]) if rest else 30))
+    elif cmd == "autoplay":
+        kv = parse_kv(rest[1:])
+        print(autoplay(int(rest[0]), int(kv.get("pick", 0))))
     elif cmd == "log":
         pat = re.compile(rest[0] if rest else r"\[SpireLedger\]")
         with open(LOG, encoding="utf-8", errors="replace") as f:

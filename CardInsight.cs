@@ -122,7 +122,9 @@ internal static class CardInsight
             var rs = RunManager.Instance.DebugOnlyGetState();
             Player? me = rs != null ? LocalContext.GetMe(rs) : null;
             if (me == null) { Hide(); return; }
-            var history = History(me.NetId);
+            // Test hook for demo screenshots: read the card history as another player (a Steam id).
+            ulong historyId = ulong.TryParse(System.Environment.GetEnvironmentVariable("SPIRELEDGER_HISTORY_NETID"), out var hid) ? hid : me.NetId;
+            var history = History(historyId);
 
             if (_layer == null)
             {
