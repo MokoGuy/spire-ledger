@@ -220,25 +220,32 @@ public static partial class DamageChartsMod
         try
         {
             LastBadges.Clear();
+            LastBadgeTitles.Clear();
             var badges = new System.Text.Json.Nodes.JsonObject();
             var stats = new System.Text.Json.Nodes.JsonObject();
+            var titlesJson = new System.Text.Json.Nodes.JsonObject();
             foreach (var p in run.Players)
             {
                 var list = p.NetId == playerId ? __result
                     : MegaCrit.Sts2.Core.Runs.ScoreUtility.GetBadges(run, p.NetId, won);
                 var ids = new List<string>();
-                foreach (var b in list) ids.Add(b.Id);
+                var titles = new List<string>();
+                foreach (var b in list) { ids.Add(b.Id); titles.Add(BadgeTitle(b)); }
                 LastBadges[p.NetId] = ids;
+                LastBadgeTitles[p.NetId] = titles;
                 var arr = new System.Text.Json.Nodes.JsonArray();
                 foreach (var id in ids) arr.Add(id);
                 badges[p.NetId.ToString()] = arr;
+                var tarr = new System.Text.Json.Nodes.JsonArray();
+                foreach (var t in titles) tarr.Add(t);
+                titlesJson[p.NetId.ToString()] = tarr;
                 stats[p.NetId.ToString()] = new System.Text.Json.Nodes.JsonObject
                 {
                     ["damage_dealt"] = p.ExtraFields?.DamageDealt ?? 0,
                     ["debuffs_applied"] = p.ExtraFields?.DebuffsApplied ?? 0,
                 };
             }
-            RunLedger.SetResult(won, run.FloorReached, badges, stats);
+            RunLedger.SetResult(won, run.FloorReached, badges, titlesJson, stats);
             OnRunEnded();
             GD.Print($"[SpireLedger] run result recorded (won={won}, badges for {LastBadges.Count} player(s))");
         }
@@ -253,5 +260,34 @@ public static partial class DamageChartsMod
     private static void OnRunEnded()
     {
         if (_recapEnabled && _run.HasData()) _recapVisible = true;
+    }
+}
+
+public static partial class DamageChartsMod
+{
+    // Localized badge titles per player slot for the recap, or null before the run has ended.
+    internal static readonly Dictionary<ulong, List<string>> LastBadgeTitles = new();
+
+    private static string[]? PartyBadgeNames()
+    {
+        if (LastBadgeTitles.Count == 0) return null;
+        var names = new string[_players.Count];
+        for (int s = 0; s < _players.Count; s++)
+            names[s] = LastBadgeTitles.TryGetValue(_players[s].NetId, out var t) ? string.Join(", ", t) : "";
+        return names;
+    }
+
+    // Badge title as the game-over screen shows it (rarity-specific title when the game has one).
+    private static string BadgeTitle(MegaCrit.Sts2.Core.Models.Badges.Badge b)
+    {
+        try
+        {
+            string prefix = b.Rarity.ToString().ToLowerInvariant();
+            foreach (var key in new[] { $"{b.Id}.{prefix}Title", $"{b.Id}.title" })
+                if (MegaCrit.Sts2.Core.Localization.LocString.Exists("badges", key))
+                    return new MegaCrit.Sts2.Core.Localization.LocString("badges", key).GetFormattedText();
+        }
+        catch { }
+        return b.Id;
     }
 }

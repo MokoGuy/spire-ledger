@@ -114,7 +114,7 @@ internal sealed class RunAggregate
         _encHeal.Add(encH);
         _encBlock.Add(encB);
 
-        _log.Add(new LogEntry(_encounters, $"──── Fight {_encounters} ────", false));
+        _log.Add(new LogEntry(_encounters, $"──── {Loc.T("fight_n", _encounters)} ────", false));
         foreach (var e in src.Log) _log.Add(e);
         if (_log.Count > LogCap) _log.RemoveRange(0, _log.Count - LogCap);
     }

@@ -109,7 +109,7 @@ internal sealed class DamageChartView
         _container.AddChild(_iconLayer);
 
         _title = UiTheme.MakeLabel(11, new Color(UiTheme.Cream.R, UiTheme.Cream.G, UiTheme.Cream.B, 0.85f));
-        _title.Text = "Damage";
+        _title.Text = Loc.T("damage_title");
         _container.AddChild(_title);
 
         if (savedPosFrac.HasValue) { _posFrac = savedPosFrac.Value; _posFracInit = true; }
@@ -279,7 +279,7 @@ internal sealed class DamageChartView
                 var outColor = snap.PlayerCount == 1 ? palette[0] : UiTheme.Cream;
                 int ts = _native ? F(titleSize, sc) : F(titleSize - 1, sc);
                 float tx = _title.Position.X + _title.GetMinimumSize().X;
-                foreach (var (text, color) in new[] { (" Out", outColor), (" | ", dim), ("In", UiTheme.Red), (" / Round", titleColor) })
+                foreach (var (text, color) in new[] { (Loc.T("out_word"), outColor), (" | ", dim), (Loc.T("in_word"), UiTheme.Red), (Loc.T("per_round"), titleColor) })
                 {
                     var part = NextLabel(ref labelCur, ts, color, numFont);
                     part.Text = text;

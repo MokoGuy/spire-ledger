@@ -43,7 +43,10 @@ internal static class RunLedger
             _startTimeField ??= AccessTools.Field(typeof(RunManager), "_startTime");
             long start = _startTimeField?.GetValue(RunManager.Instance) is long l ? l : 0;
             string seed = rs.Rng.StringSeed ?? "noseed";
-            return $"{start}_{seed}";
+            // The local player's NetId keeps two instances on one PC (local co-op tests) apart.
+            ulong me = 0;
+            try { me = MegaCrit.Sts2.Core.Context.LocalContext.GetMe(rs)?.NetId ?? 0; } catch { }
+            return $"{start}_{seed}_{me}";
         }
         catch { return null; }
     }
@@ -111,7 +114,7 @@ internal static class RunLedger
     }
 
     // Game over: result, badges per player (NetId -> badge ids) and the game's own counters.
-    public static void SetResult(bool won, int floor, JsonObject badges, JsonObject gameStats)
+    public static void SetResult(bool won, int floor, JsonObject badges, JsonObject badgeTitles, JsonObject gameStats)
     {
         if (_doc == null) return;
         _doc["result"] = new JsonObject
@@ -119,6 +122,7 @@ internal static class RunLedger
             ["won"] = won,
             ["floor"] = floor,
             ["badges"] = badges,
+            ["badge_titles"] = badgeTitles,
             ["game_stats"] = gameStats,
             ["ended_at"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
         };

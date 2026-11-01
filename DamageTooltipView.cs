@@ -94,14 +94,14 @@ internal sealed class DamageTooltipView
 
         float y = pad;
 
-        string head = info.PlayerLabel.Length > 0 ? $"Round {info.Round} — {info.PlayerLabel}" : $"Round {info.Round}";
+        string head = info.PlayerLabel.Length > 0 ? $"{Loc.T("round", info.Round)} — {info.PlayerLabel}" : Loc.T("round", info.Round);
         var h = Next(ref cur, F(15, sc), UiTheme.Gold);
         h.Text = head;
         h.SetPosition(new Vector2(pad, y));
         y += 24f * sc;
 
         var dlt = Next(ref cur, F(13, sc), UiTheme.Cream);
-        dlt.Text = $"Dealt {info.DealtTotal}";
+        dlt.Text = Loc.T("dealt_n", info.DealtTotal);
         dlt.SetPosition(new Vector2(pad, y));
         y += rowH;
 
@@ -132,13 +132,13 @@ internal sealed class DamageTooltipView
         if (info.Dealt.Count > shown)
         {
             var more = Next(ref cur, F(11, sc), new Color(UiTheme.Cream.R, UiTheme.Cream.G, UiTheme.Cream.B, 0.5f));
-            more.Text = $"+ {info.Dealt.Count - shown} more";
+            more.Text = Loc.T("more", info.Dealt.Count - shown);
             more.SetPosition(new Vector2(pad + 6f * sc, y));
             y += rowH;
         }
 
         var tk = Next(ref cur, F(13, sc), UiTheme.Red);
-        tk.Text = $"Taken {info.TakenTotal}";
+        tk.Text = Loc.T("taken_n", info.TakenTotal);
         tk.SetPosition(new Vector2(pad, y));
         y += 22f * sc;
 
@@ -164,7 +164,7 @@ internal sealed class DamageTooltipView
         float y = NativeLook.InsetT * sc;
         float rowH = 30f * sc, iconSz = NativeIcon * sc, gap = 8f * sc;
 
-        string head = info.PlayerLabel.Length > 0 ? $"Round {info.Round} — {info.PlayerLabel}" : $"Round {info.Round}";
+        string head = info.PlayerLabel.Length > 0 ? $"{Loc.T("round", info.Round)} — {info.PlayerLabel}" : Loc.T("round", info.Round);
         var h = NextNative(ref cur, F(22, sc), UiTheme.Gold, title);
         h.Text = head;
         Place(h, left, y, contentW, 34f * sc, HorizontalAlignment.Left);
@@ -198,7 +198,7 @@ internal sealed class DamageTooltipView
         if (info.Dealt.Count > shown)
         {
             var more = NextNative(ref cur, F(16, sc), dim, body);
-            more.Text = $"+ {info.Dealt.Count - shown} more";
+            more.Text = Loc.T("more", info.Dealt.Count - shown);
             Place(more, indent, y, contentW, 24f * sc, HorizontalAlignment.Left);
             y += 24f * sc;
         }

@@ -71,7 +71,7 @@ internal sealed class DamageForecastView
         _container.AddChild(_bg);
 
         _title = UiTheme.MakeLabel(12, new Color(UiTheme.Cream.R, UiTheme.Cream.G, UiTheme.Cream.B, 0.85f));
-        _title.Text = "Incoming Forecast";
+        _title.Text = Loc.T("incoming_forecast");
         _container.AddChild(_title);
 
         _loss = NewRich(24, UiTheme.Red);
@@ -224,7 +224,7 @@ internal sealed class DamageForecastView
             int after = r.CurrentHp - r.MaxLoss;
             string afterHex = after <= 0 ? LossHex
                 : (r.MaxHp > 0 && after < r.MaxHp * 0.30f ? GoldHex : GreenHex);
-            string tail = after <= 0 ? "☠" : "left";
+            string tail = after <= 0 ? "☠" : Loc.T("left");
             string hidden = r.HasHidden ? $" [color=#{GoldHex}][font_size={F(15, sc)}]+?[/font_size][/color]" : "";
             string line1 = r.IsSafe
                 ? $"[color=#{GreenHex}]Safe ✓[/color]"
@@ -247,7 +247,7 @@ internal sealed class DamageForecastView
             string led = "";
             if (mitigated)
             {
-                led = $"In {r.Incoming}";
+                led = Loc.T("in_n", r.Incoming);
                 if (r.Block > 0) led += $"\n[color=#{BlockHex}]Blk {r.Block}[/color]";
                 if (r.OstyAbsorb > 0) led += $"\n[color=#{OstyHex}]Osty {r.OstyAbsorb}[/color]";
             }

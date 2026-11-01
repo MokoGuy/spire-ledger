@@ -1,0 +1,143 @@
+{
+  "schema": 1,
+  "id": "1793495096_C00P2_1",
+  "seed": "C00P2",
+  "start_time": 1793495096,
+  "game_mode": "Custom",
+  "ascension": 5,
+  "modifiers": [],
+  "players": [
+    {
+      "slot": 0,
+      "net_id": "1",
+      "character": "Le Soldat de Fer",
+      "character_id": "IRONCLAD",
+      "is_local": true
+    },
+    {
+      "slot": 1,
+      "net_id": "1000",
+      "character": "Le Soldat de Fer",
+      "character_id": "IRONCLAD",
+      "is_local": false
+    }
+  ],
+  "combats": [
+    {
+      "index": 1,
+      "act": 1,
+      "floor": 2,
+      "encounter": "Adeptes",
+      "encounter_id": "CULTISTS_NORMAL",
+      "rounds": 5,
+      "players": [
+        {
+          "slot": 0,
+          "dealt": 102,
+          "taken": 22,
+          "healed": 6,
+          "block": 5,
+          "block_given": 0,
+          "cards_played": 14,
+          "energy_spent": 15,
+          "effects_total": 5,
+          "biggest_hit": 9,
+          "biggest_hit_source": "Frappe",
+          "dealt_by_source": [
+            {
+              "name": "Frappe",
+              "total": 84,
+              "icon": "res://images/atlases/card_atlas.sprites/ironclad/strike_ironclad.tres"
+            },
+            {
+              "name": "Poison",
+              "total": 10,
+              "icon": "res://images/atlases/power_atlas.sprites/poison_power.tres"
+            },
+            {
+              "name": "Heurt",
+              "total": 8,
+              "icon": "res://images/atlases/card_atlas.sprites/ironclad/bash.tres"
+            }
+          ],
+          "taken_by_source": [
+            {
+              "name": "Adepte moisi",
+              "total": 18,
+              "icon": null
+            },
+            {
+              "name": "Adepte calcifi\u00E9",
+              "total": 4,
+              "icon": null
+            }
+          ],
+          "effects": [
+            {
+              "name": "Poison",
+              "total": 5,
+              "icon": "res://images/atlases/power_atlas.sprites/poison_power.tres"
+            }
+          ],
+          "potions": []
+        },
+        {
+          "slot": 1,
+          "dealt": 99,
+          "taken": 22,
+          "healed": 6,
+          "block": 5,
+          "block_given": 0,
+          "cards_played": 14,
+          "energy_spent": 15,
+          "effects_total": 12,
+          "biggest_hit": 10,
+          "biggest_hit_source": "Poison",
+          "dealt_by_source": [
+            {
+              "name": "Frappe",
+              "total": 72,
+              "icon": "res://images/atlases/card_atlas.sprites/ironclad/strike_ironclad.tres"
+            },
+            {
+              "name": "Poison",
+              "total": 19,
+              "icon": "res://images/atlases/power_atlas.sprites/poison_power.tres"
+            },
+            {
+              "name": "Heurt",
+              "total": 8,
+              "icon": "res://images/atlases/card_atlas.sprites/ironclad/bash.tres"
+            }
+          ],
+          "taken_by_source": [
+            {
+              "name": "Adepte moisi",
+              "total": 18,
+              "icon": null
+            },
+            {
+              "name": "Adepte calcifi\u00E9",
+              "total": 4,
+              "icon": null
+            }
+          ],
+          "effects": [
+            {
+              "name": "Poison",
+              "total": 10,
+              "icon": "res://images/atlases/power_atlas.sprites/poison_power.tres"
+            },
+            {
+              "name": "Vuln\u00E9rable",
+              "total": 2,
+              "icon": "res://images/atlases/power_atlas.sprites/vulnerable_power.tres"
+            }
+          ],
+          "potions": []
+        }
+      ]
+    }
+  ],
+  "updated_at": 1793495193
+}

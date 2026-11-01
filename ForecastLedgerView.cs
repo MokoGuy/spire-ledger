@@ -88,7 +88,7 @@ internal sealed class ForecastLedgerView
             if (rounds.Count > 0)
             {
                 var tl = Next(ref cur, F(11, sc), new Color(UiTheme.Cream.R, UiTheme.Cream.G, UiTheme.Cream.B, 0.55f), _bodyFont);
-                tl.Text = "HP lost / round";
+                tl.Text = Loc.T("hp_lost_round");
                 tl.SetPosition(new Vector2(pad, y));
                 y += 17f * sc;
 
@@ -172,7 +172,7 @@ internal sealed class ForecastLedgerView
             if (r.HasHidden)
             {
                 var hid = Next(ref cur, F(13, sc), UiTheme.Gray, _bodyFont);
-                hid.Text = "Hidden intent  ?";
+                hid.Text = Loc.T("hidden_intent");
                 hid.SetPosition(new Vector2(textX, y));
                 PlaceIcon(ref icon, hiddenIcon, pad + 4f * sc, y + (rowH - iconSz) * 0.5f, iconSz);
                 y += rowH;

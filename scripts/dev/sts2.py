@@ -45,8 +45,11 @@ def http(method, path, body=None, timeout=30):
     data = json.dumps(body).encode() if body is not None else None
     req = urllib.request.Request(BASE + path, data=data, method=method,
                                  headers={"Content-Type": "application/json"} if data else {})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        raw = r.read().decode("utf-8")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            raw = r.read().decode("utf-8")
+    except urllib.error.HTTPError as e:  # 409 = wrong mode (singleplayer vs multiplayer), 4xx = bad action
+        raw = e.read().decode("utf-8", "replace") or json.dumps({"status": "error", "error": f"HTTP {e.code}"})
     try:
         return json.loads(raw)
     except ValueError:

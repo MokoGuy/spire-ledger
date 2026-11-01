@@ -117,6 +117,7 @@ public static partial class DamageChartsMod
             else GD.Print("[SpireLedger] power-source hooks DISABLED via config");
             TryApplyHistoryHooks();
             TryApplyBadgeHook();
+            LedgerScreen.TryApplyHook();
             _initialized = true;
             GD.Print($"[SpireLedger] initialized (build {BuildTag}, source_hooks={_sourceHooks})");
         }
@@ -393,7 +394,7 @@ public static partial class DamageChartsMod
             int round = SafeCombatState()?.RoundNumber ?? 0;
             string onto = target == null ? "" : target.IsPlayer ? (target.Player == potion.Owner ? "" : $" → {MaybeName(target)}")
                 : $" → {TextHelper.SafeGetText(() => target.Monster!.Title) ?? "Enemy"}";
-            _tracker.AddLog(round, $"{name} used{onto}", false);
+            _tracker.AddLog(round, Loc.T("log_used", name, onto), false);
         }
         catch { /* never disrupt the game's potion flow */ }
     }
@@ -694,6 +695,7 @@ public static partial class DamageChartsMod
                 try { UiTheme.EnsurePanelStyle(((SceneTree)Engine.GetMainLoop()).Root); } catch { }
             }
             HandleHotkey();
+            LedgerScreen.Tick();
 
             // Run lifecycle: a fresh run (not-in-progress -> in-progress) clears the run-wide aggregate
             // so the recap never shows a previous run's data.
@@ -784,6 +786,7 @@ public static partial class DamageChartsMod
                 // so it can appear on top of the game's end screen.
                 _bars?.Hide(); _tooltip?.Hide(); _forecast?.Hide(); _forecastLedger?.Hide(); _summaryActive = false;
                 _detail.SummaryMode = false; _detail.RecapMode = true; _detail.ShowRunHistory = false; _detail.UiScaleMul = _uiScale; _detail.SetVisible(true);
+                _detail.PartyBadges = PartyBadgeNames();
                 _detail.Render(_run.RunSourceSnapshot(), _run.RunChartSnapshot(), Palette);
                 _detail.UpdateMouse(Input.IsMouseButtonPressed(MouseButton.Left));
                 if (_detail.TakeCloseRequest()) { _recapVisible = false; _detail.RecapMode = false; _detail.SetVisible(false); }
@@ -958,7 +961,7 @@ public static partial class DamageChartsMod
             string name = TextHelper.SafeGetText(() => _players[i].Character.Title) ?? $"P{i + 1}";
             bool isMe = ReferenceEquals(_players[i], me);
             if (isMe) localSlot = i;
-            labels[i] = isMe && _players.Count > 1 ? $"{name} (You)" : name;
+            labels[i] = isMe && _players.Count > 1 ? $"{name} ({Loc.T("you")})" : name;
         }
 
         _summaryActive = false; // a new fight clears any lingering end-of-combat summary
@@ -1226,7 +1229,7 @@ public static partial class DamageChartsMod
                 if (hslot < 0) return;
                 int healed = -lost;
                 _tracker.AddHealed(hslot, healed);
-                _tracker.AddLog(round, $"{MaybeName(creature)} healed  {healed}", false);
+                _tracker.AddLog(round, Loc.T("log_healed", MaybeName(creature), healed), false);
                 return;
             }
 
@@ -1284,7 +1287,7 @@ public static partial class DamageChartsMod
         try
         {
             if (c.IsPlayer)
-                return _players.Count <= 1 ? "you" : (TextHelper.SafeGetText(() => c.Player!.Character.Title) ?? "you");
+                return _players.Count <= 1 ? Loc.T("you").ToLowerInvariant() : (TextHelper.SafeGetText(() => c.Player!.Character.Title) ?? Loc.T("you").ToLowerInvariant());
             return TextHelper.SafeGetText(() => c.Monster!.Title) ?? "?";
         }
         catch { return "?"; }

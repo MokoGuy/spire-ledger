@@ -103,6 +103,8 @@ internal sealed class DamageDetailView
     // dealt/taken/heal/block plus a run total) above the current-combat columns.
     public bool ShowRunHistory;
     public List<RunAggregate.EncounterStat>? RunFights;
+    // Co-op recap: per-slot badge names ("" = none), shown under each player's row in the party table.
+    public string[]? PartyBadges;
     // Display string for the toggle key, shown in the header (set by the mod from config).
     public string HotkeyHint = "C";
 
@@ -410,7 +412,10 @@ internal sealed class DamageDetailView
             float gap = full ? pad : 12f;
             float headerY = full ? top + pad * 0.6f : 8f;
             bool recap = full && RecapMode;
-            bool history = full && !recap && ShowRunHistory && RunFights != null && RunFights.Count > 0;
+            // Co-op: a party table (one row per player) replaces the local-only totals/history band.
+            bool party = full && snap.PlayerCount > 1;
+            bool partyBadges = party && recap && PartyBadges != null;
+            bool history = !party && full && !recap && ShowRunHistory && RunFights != null && RunFights.Count > 0;
             float colW = (_w - pad * 2f - gap) * 0.5f;
             float leftX = pad;
             float rightX = pad + colW + gap;
@@ -486,7 +491,8 @@ internal sealed class DamageDetailView
             int fitRows;
             while (true)
             {
-                float bandH = recap ? 56f * _fontScale + vgap : history ? HistoryBandHeight(histShown) + vgap : 0f;
+                float bandH = party ? PartyBandHeight(snap.PlayerCount, partyBadges) + vgap
+                    : recap ? 56f * _fontScale + vgap : history ? HistoryBandHeight(histShown) + vgap : 0f;
                 fitRows = (int)((listBottom - belowCols - (colTop + bandH + colHeadH)) / rowH);
                 // Give up history rows (oldest first; the TOTAL row stays) before squeezing sources below 3.
                 if (!history || histShown == 0 || fitRows >= Math.Min(srcCount, 3)) { colTop += bandH; break; }
@@ -523,20 +529,22 @@ internal sealed class DamageDetailView
 
             var header = Next(ref cur, full ? 22 : 16, UiTheme.Gold, FontRole.Bold);
             header.Text = recap
-                ? $"Run Recap{who}     ({HotkeyHint} to close)"
+                ? $"{Loc.T("run_recap")}{who}     ({Loc.T("to_close", HotkeyHint)})"
                 : SummaryMode
-                    ? $"Combat Summary{who}     ({HotkeyHint} or ✕ to dismiss)"
-                    : $"Combat Stats{who}     ({HotkeyHint} to close)";
+                    ? $"{Loc.T("combat_summary")}{who}     ({Loc.T("to_dismiss", HotkeyHint)})"
+                    : $"{Loc.T("combat_stats")}{who}     ({Loc.T("to_close", HotkeyHint)})";
             if (full) { header.HorizontalAlignment = HorizontalAlignment.Center; header.SetSize(new Vector2(_w, 0f)); header.SetPosition(new Vector2(0f, headerY)); }
             else { header.HorizontalAlignment = HorizontalAlignment.Left; header.SetSize(Vector2.Zero); header.SetPosition(new Vector2(10f, headerY)); }
 
-            if (recap)
+            if (party)
+                RenderPartyBand(ref cur, pad, bandTop, _w - pad * 2f, snap, palette, partyBadges);
+            else if (recap)
                 RenderTotalsBand(ref cur, pad, bandTop, _w - pad * 2f, ps, color);
             else if (history)
                 RenderHistoryBand(ref cur, pad, bandTop, _w - pad * 2f, RunFights!, histShown);
 
-            RenderColumn(ref cur, ref barCur, ref iconCur, leftX, colTop, colW, rowH, maxRows, full, "DEALT", ps.Dealt, ps.DealtTotal, color, false);
-            RenderColumn(ref cur, ref barCur, ref iconCur, rightX, colTop, colW, rowH, maxRows, full, "TAKEN", ps.Taken, ps.TakenTotal, UiTheme.Red, true);
+            RenderColumn(ref cur, ref barCur, ref iconCur, leftX, colTop, colW, rowH, maxRows, full, Loc.T("dealt"), ps.Dealt, ps.DealtTotal, color, false);
+            RenderColumn(ref cur, ref barCur, ref iconCur, rightX, colTop, colW, rowH, maxRows, full, Loc.T("taken"), ps.Taken, ps.TakenTotal, UiTheme.Red, true);
             if (potH > 0f) RenderPotions(ref cur, ref iconCur, leftX, potY, _w - pad * 2f, ps.Potions, full);
 
             if (full && chartH > 0f)
@@ -551,6 +559,73 @@ internal sealed class DamageDetailView
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] detail render error: {ex.Message}"); }
     }
 
+    private float PartyRowH => 24f * _fontScale;
+    private float PartyBadgeH => 20f * _fontScale;
+
+    private float PartyBandHeight(int players, bool badges)
+        => 24f * _fontScale + 20f * _fontScale + players * (PartyRowH + (badges ? PartyBadgeH : 0f));
+
+    // Co-op party table: one row per player with every per-player stat side by side; the best value of
+    // each column is drawn in gold. In the run recap each row is followed by that player's badges.
+    private void RenderPartyBand(ref int cur, float x, float top, float width, SourceSnapshot snap, Color[] palette, bool badges)
+    {
+        var dim = new Color(UiTheme.Cream.R, UiTheme.Cream.G, UiTheme.Cream.B, 0.6f);
+        var head = Next(ref cur, 16, UiTheme.Gold, FontRole.Bold);
+        head.Text = Loc.T("party");
+        head.SetPosition(new Vector2(x, top));
+
+        string[] caps = { Loc.T("dealt"), Loc.T("effects"), Loc.T("block_given"), Loc.T("block"), Loc.T("taken"),
+                          Loc.T("healed"), Loc.T("cards"), Loc.T("energy"), Loc.T("dmg_per_energy"), Loc.T("biggest") };
+        int n = snap.PlayerCount;
+        var values = new long[n][];
+        for (int s = 0; s < n; s++)
+        {
+            var p = s < snap.PerPlayer.Length ? snap.PerPlayer[s] : new PlayerSources();
+            long perEnergy = p.EnergySpent > 0 ? (long)Math.Round((double)p.DealtTotal / p.EnergySpent) : 0;
+            values[s] = new[] { p.DealtTotal, p.EffectsTotal, p.BlockGiven, p.BlockTotal, p.TakenTotal,
+                                p.HealTotal, p.CardsPlayed, p.EnergySpent, perEnergy, p.BiggestHit };
+        }
+
+        float nameW = width * 0.18f;
+        float cellW = (width - nameW) / caps.Length;
+        float capY = top + 24f * _fontScale;
+        for (int c = 0; c < caps.Length; c++)
+        {
+            var cap = Next(ref cur, 11, dim, FontRole.Bold);
+            cap.Text = caps[c];
+            cap.SetPosition(new Vector2(x + nameW + c * cellW, capY));
+        }
+
+        float y = capY + 20f * _fontScale;
+        for (int s = 0; s < n; s++)
+        {
+            var color = palette[Math.Min(s, palette.Length - 1)];
+            var name = Next(ref cur, 15, color, FontRole.Bold);
+            name.Text = s < snap.Labels.Length ? snap.Labels[s] : $"P{s + 1}";
+            name.SetPosition(new Vector2(x, y));
+            for (int c = 0; c < caps.Length; c++)
+            {
+                long v = values[s][c];
+                bool best = v > 0;
+                // "Taken" is the one column where less is better.
+                for (int o = 0; o < n && best; o++)
+                    if (o != s && (c == 4 ? values[o][c] < v : values[o][c] > v)) best = false;
+                var val = Next(ref cur, 15, best && n > 1 ? UiTheme.Gold : UiTheme.Cream, FontRole.Numeric);
+                val.Text = v.ToString();
+                val.SetPosition(new Vector2(x + nameW + c * cellW, y));
+            }
+            y += PartyRowH;
+            if (badges)
+            {
+                var b = Next(ref cur, 12, dim);
+                string list = PartyBadges != null && s < PartyBadges.Length ? PartyBadges[s] : "";
+                b.Text = $"{Loc.T("badges")} : {(string.IsNullOrEmpty(list) ? Loc.T("no_badge") : list)}";
+                b.SetPosition(new Vector2(x + 12f * _fontScale, y - 2f * _fontScale));
+                y += PartyBadgeH;
+            }
+        }
+    }
+
     // Run-recap totals strip: four big stats (Dealt / Taken / Healed / Block) spread across the width.
     private void RenderTotalsBand(ref int cur, float x, float top, float width, PlayerSources ps, Color dealtColor)
     {
@@ -558,10 +633,10 @@ internal sealed class DamageDetailView
         var block = new Color(0.50f, 0.72f, 0.96f);
         var stats = new (string Caption, long Value, Color Color)[]
         {
-            ("DEALT", ps.DealtTotal, dealtColor),
-            ("TAKEN", ps.TakenTotal, UiTheme.Red),
-            ("HEALED", ps.HealTotal, heal),
-            ("BLOCK", ps.BlockTotal, block),
+            (Loc.T("dealt"), ps.DealtTotal, dealtColor),
+            (Loc.T("taken"), ps.TakenTotal, UiTheme.Red),
+            (Loc.T("healed"), ps.HealTotal, heal),
+            (Loc.T("block"), ps.BlockTotal, block),
         };
         float cellW = width / stats.Length;
         for (int i = 0; i < stats.Length; i++)
@@ -589,13 +664,13 @@ internal sealed class DamageDetailView
         int n = fights.Count;
         // Sized like the by-source columns below it (16 heading, 14 rows) rather than as fine print.
         var head = Next(ref cur, 16, UiTheme.Gold, FontRole.Bold);
-        head.Text = $"RUN SO FAR — {n} prior fight{(n == 1 ? "" : "s")}";
+        head.Text = Loc.T("run_so_far", n);
         head.SetPosition(new Vector2(x, top));
 
         float fightW = width * 0.16f;
         float statW = (width - fightW) / 4f;
         float[] cx = { x, x + fightW, x + fightW + statW, x + fightW + statW * 2f, x + fightW + statW * 3f };
-        string[] heads = { "FIGHT", "DEALT", "TAKEN", "HEAL", "BLOCK" };
+        string[] heads = { Loc.T("fight"), Loc.T("dealt"), Loc.T("taken"), Loc.T("heal"), Loc.T("block") };
 
         float chY = top + 26f * _fontScale;
         for (int i = 0; i < heads.Length; i++)
@@ -623,7 +698,7 @@ internal sealed class DamageDetailView
             }
             y += rowH;
         }
-        string[] totals = { "TOTAL", td.ToString(), tt.ToString(), th.ToString(), tb.ToString() };
+        string[] totals = { Loc.T("total"), td.ToString(), tt.ToString(), th.ToString(), tb.ToString() };
         for (int c = 0; c < totals.Length; c++)
         {
             var lbl = Next(ref cur, 14, c == 0 ? UiTheme.Gold : cols[c], FontRole.Numeric);
@@ -706,7 +781,7 @@ internal sealed class DamageDetailView
         if (entries.Count > shown)
         {
             var more = Next(ref cur, full ? 13 : 11, new Color(1f, 1f, 1f, 0.5f));
-            more.Text = $"+ {entries.Count - shown} more";
+            more.Text = Loc.T("more", entries.Count - shown);
             more.SetPosition(new Vector2(x, y));
         }
     }
@@ -718,7 +793,7 @@ internal sealed class DamageDetailView
     {
         const int Cap = 12;             // show the most recent rounds (or fights); older scroll off
         var head = Next(ref cur, 16, UiTheme.Gold, FontRole.Bold);
-        head.Text = recap ? "Damage / Fight" : "Damage / Round";
+        head.Text = recap ? Loc.T("damage_fight") : Loc.T("damage_round");
         head.SetPosition(new Vector2(x, top));
 
         // Per-player legend (multiplayer only), to the right of the heading.
@@ -743,7 +818,7 @@ internal sealed class DamageDetailView
         if (total == 0)
         {
             var empty = Next(ref cur, 13, new Color(1f, 1f, 1f, 0.6f));
-            empty.Text = "No damage yet";
+            empty.Text = Loc.T("no_damage");
             empty.SetPosition(new Vector2(plotLeft, plotTop + 6f));
             return;
         }
@@ -833,7 +908,7 @@ internal sealed class DamageDetailView
     {
         float leftX = full ? pad : 14f;
         var head = Next(ref cur, full ? 16 : 13, UiTheme.Gold, FontRole.Bold);
-        head.Text = "Combat Log";
+        head.Text = Loc.T("combat_log");
         head.SetPosition(new Vector2(leftX, top));
 
         float listTop = top + LogHeadH(full);
@@ -848,7 +923,7 @@ internal sealed class DamageDetailView
         int lastRound = int.MinValue;
         foreach (var e in log)
         {
-            if (e.Round != lastRound) { rows.Add(($"──── Round {e.Round} ────", sepColor, true)); lastRound = e.Round; }
+            if (e.Round != lastRound) { rows.Add(($"──── {Loc.T("round", e.Round)} ────", sepColor, true)); lastRound = e.Round; }
             rows.Add((e.Text, e.Taken ? UiTheme.Red : UiTheme.Cream, false));
         }
 
@@ -1042,7 +1117,7 @@ internal sealed class DamageDetailView
         float iconSz = full ? 22f * _fontScale : 18f;
         var green = new Color(0.55f, 0.85f, 0.55f);
         var head = Next(ref cur, textSize, green, FontRole.Bold);
-        head.Text = "POTIONS";
+        head.Text = Loc.T("potions").ToUpperInvariant();
         head.SetPosition(new Vector2(x, y));
         float cx = x + (full ? 90f * _fontScale : 66f);
         float right = x + width;
@@ -1055,7 +1130,7 @@ internal sealed class DamageDetailView
             if (cx + need > right && i > 0)
             {
                 var more = Next(ref cur, textSize, new Color(1f, 1f, 1f, 0.5f));
-                more.Text = $"+ {potions.Count - i} more";
+                more.Text = Loc.T("more", potions.Count - i);
                 more.SetPosition(new Vector2(cx, y));
                 break;
             }
