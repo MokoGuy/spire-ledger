@@ -193,13 +193,16 @@ page). `scripts/package-workshop.sh` is the macOS equivalent inherited from Dama
 ```
 
 - `hotkey`: a bare key like `c` (the default) or `f9`, or modifier+key, e.g. `cmd+d`, `shift+d`, `alt+d`, `ctrl+d`.
-- `forecast`: set `false` to hide the incoming-damage forecast.
+- `forecast`: set `false` to hide the incoming-damage forecast. In combat, **`V`** shows/hides it.
+- `forecast_hotkey` / `bars_hotkey`: the in-combat toggles for the forecast (default `v`) and the damage
+  chart (default `b`); same syntax as `hotkey`. Toggling saves `forecast` / `show_bars`.
 - `forecast_anchor`: `"player"` (default) docks the forecast beside your character; dragging it switches
   to `"free"` and remembers the spot.
 - `summary_on_combat_end`: set `false` to skip the end-of-combat summary.
 - `run_recap`: set `false` to disable the out-of-combat run recap (the hotkey then only toggles the
   in-combat breakdown).
-- `show_bars`: **default `true`.** Set `false` to hide the always-on Damage Out | In / Round chart.
+- `show_bars`: **default `true`.** Set `false` to hide the always-on Damage Out | In / Round chart. In combat,
+  **`B`** shows/hides it.
 - `bars_style`: `"compact"` (default), the small chart above the forecast, or `"full"` for the larger one.
 - `bars_anchor`: `"forecast"` (default) stacks the chart above the forecast; dragging it switches to
   `"free"` and remembers the spot.
@@ -213,7 +216,7 @@ page). `scripts/package-workshop.sh` is the macOS equivalent inherited from Dama
   Some effects that deal their damage after an animation still show as `Status`. Set `false` to turn
   the hooks off.
 
-Changes to `hotkey`, `show_bars` and `vfx_moments` are picked up live (within about half a second);
+Changes to `hotkey`, `show_bars`, `forecast`, `forecast_hotkey`, `bars_hotkey` and `vfx_moments` are picked up live (within about half a second);
 the rest apply the next time the game starts.
 
 ## License

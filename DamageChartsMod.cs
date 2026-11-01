@@ -90,6 +90,10 @@ public static partial class DamageChartsMod
     private static Key _hotkeyKey = Key.C;
     private static readonly List<Key> _hotkeyMods = new();
     private static string _hotkeySpec = "c";
+    // In-game toggles (config "forecast_hotkey" / "bars_hotkey"): V = incoming-damage forecast,
+    // B = damage dealt/taken chart. Keys the game doesn't bind (it uses A D E S X M, digits, arrows…).
+    private static (Key Key, List<Key> Mods, string Spec, bool Down) _forecastToggle = (Key.V, new(), "v", false);
+    private static (Key Key, List<Key> Mods, string Spec, bool Down) _barsToggle = (Key.B, new(), "b", false);
     private static bool _hotkeyDownLast;
 
     // Saved chart position (null = default top-right until first placed/dragged).
@@ -203,6 +207,8 @@ public static partial class DamageChartsMod
             _barsCompact = !(root.TryGetProperty("bars_style", out var bst) && bst.ValueKind == JsonValueKind.String && bst.GetString() == "full");
             _barsDocked = !(root.TryGetProperty("bars_anchor", out var ban) && ban.ValueKind == JsonValueKind.String && ban.GetString() == "free");
             if (root.TryGetProperty("forecast", out var fc) && fc.ValueKind == JsonValueKind.False) _showForecast = false;
+            if (root.TryGetProperty("forecast_hotkey", out var fh) && fh.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, fh.GetString());
+            if (root.TryGetProperty("bars_hotkey", out var bh) && bh.ValueKind == JsonValueKind.String) SetToggle(ref _barsToggle, bh.GetString());
             if (root.TryGetProperty("forecast_pos_x_frac", out var fpx) && fpx.TryGetSingle(out var ffx)) _fcPosXFrac = ffx;
             if (root.TryGetProperty("forecast_pos_y_frac", out var fpy) && fpy.TryGetSingle(out var ffy)) _fcPosYFrac = ffy;
             _fcAnchorPlayer = !(root.TryGetProperty("forecast_anchor", out var fan) && fan.ValueKind == JsonValueKind.String && fan.GetString() == "free");
@@ -242,6 +248,8 @@ public static partial class DamageChartsMod
                 ["pos_x_frac"] = (float)Math.Round(pos.X, 4),
                 ["pos_y_frac"] = (float)Math.Round(pos.Y, 4),
                 ["forecast"] = _showForecast,
+                ["forecast_hotkey"] = _forecastToggle.Spec,
+                ["bars_hotkey"] = _barsToggle.Spec,
                 ["forecast_pos_x_frac"] = _fcForecastPosRounded().X,
                 ["forecast_pos_y_frac"] = _fcForecastPosRounded().Y,
                 ["forecast_anchor"] = _fcAnchorPlayer ? "player" : "free",
@@ -303,6 +311,14 @@ public static partial class DamageChartsMod
                 _showBars = showBars;
                 if (!_showBars) _bars?.Hide();
             }
+            bool showForecast = !(root.TryGetProperty("forecast", out var fc2) && fc2.ValueKind == JsonValueKind.False);
+            if (showForecast != _showForecast)
+            {
+                _showForecast = showForecast;
+                if (!_showForecast) { _forecast?.Hide(); _forecastLedger?.Hide(); }
+            }
+            if (root.TryGetProperty("forecast_hotkey", out var fh2) && fh2.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, fh2.GetString());
+            if (root.TryGetProperty("bars_hotkey", out var bh2) && bh2.ValueKind == JsonValueKind.String) SetToggle(ref _barsToggle, bh2.GetString());
             VfxMoments.Enabled = root.TryGetProperty("vfx_moments", out var vm) && vm.ValueKind == JsonValueKind.True;
         }
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] config reload failed: {ex.Message}"); }
@@ -312,6 +328,44 @@ public static partial class DamageChartsMod
     {
         try { return ((SceneTree)Engine.GetMainLoop()).Root.GetMousePosition(); }
         catch { return Vector2.Zero; }
+    }
+
+    private static void SetToggle(ref (Key Key, List<Key> Mods, string Spec, bool Down) toggle, string? spec)
+    {
+        if (string.IsNullOrWhiteSpace(spec) || spec == toggle.Spec) return;
+        Key savedKey = _hotkeyKey; var savedMods = new List<Key>(_hotkeyMods);
+        ParseHotkey(spec);                          // reuse the main hotkey parser, then restore it
+        toggle = (_hotkeyKey, new List<Key>(_hotkeyMods), spec!, false);
+        _hotkeyKey = savedKey; _hotkeyMods.Clear(); _hotkeyMods.AddRange(savedMods);
+    }
+
+    private static bool Pressed(ref (Key Key, List<Key> Mods, string Spec, bool Down) toggle)
+    {
+        bool down = Input.IsPhysicalKeyPressed(toggle.Key);
+        foreach (var m in toggle.Mods) down = down && Input.IsPhysicalKeyPressed(m);
+        bool edge = down && !toggle.Down;
+        toggle.Down = down;
+        return edge;
+    }
+
+    // V / B in combat: show or hide the forecast / the damage chart, saved to the config, with a toast.
+    private static void HandleToggles()
+    {
+        if (!SafeIsInCombat()) { Pressed(ref _forecastToggle); Pressed(ref _barsToggle); return; }
+        if (Pressed(ref _forecastToggle))
+        {
+            _showForecast = !_showForecast;
+            if (!_showForecast) { _forecast?.Hide(); _forecastLedger?.Hide(); }
+            Toast.Show($"{Loc.T(_showForecast ? "forecast_on" : "forecast_off")}  ({_forecastToggle.Spec.ToUpperInvariant()})");
+            SaveConfig();
+        }
+        if (Pressed(ref _barsToggle))
+        {
+            _showBars = !_showBars;
+            if (!_showBars) { _bars?.Hide(); _tooltip?.Hide(); }
+            Toast.Show($"{Loc.T(_showBars ? "bars_on" : "bars_off")}  ({_barsToggle.Spec.ToUpperInvariant()})");
+            SaveConfig();
+        }
     }
 
     private static void ParseHotkey(string? spec)
@@ -695,6 +749,8 @@ public static partial class DamageChartsMod
                 try { UiTheme.EnsurePanelStyle(((SceneTree)Engine.GetMainLoop()).Root); } catch { }
             }
             HandleHotkey();
+            HandleToggles();
+            Toast.Tick();
             LedgerScreen.Tick();
             ProgressImport.Tick(SafeIsRunInProgress());
             ModVersion.Tick();

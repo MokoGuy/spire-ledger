@@ -41,11 +41,6 @@ internal static class ModVersion
 
     private static INetGameService? _registeredOn;
     private static int _sentForPlayers = -1;
-    private static string? _banner;
-    private static double _bannerUntil;
-    private static CanvasLayer? _layer;
-    private static Label? _label;
-    private static Panel? _panel;
 
     // Called every frame by the mod's Tick.
     public static void Tick()
@@ -72,7 +67,6 @@ internal static class ModVersion
                 }
             }
             else _sentForPlayers = -1;
-            DrawBanner();
         }
         catch { /* never disrupt the game */ }
     }
@@ -90,38 +84,12 @@ internal static class ModVersion
             if (message.version != Version)
             {
                 string name = RunLedger.PlayerName(senderId) ?? senderId.ToString();
-                _banner = Loc.T("version_mismatch", name, message.version ?? "?", Version);
-                _bannerUntil = Time.GetTicksMsec() / 1000.0 + 15.0;
+                Toast.Show("⚠ " + Loc.T("version_mismatch", name, message.version ?? "?", Version), 15.0);
             }
         }
         catch { }
     }
 
-    private static void DrawBanner()
-    {
-        bool show = _banner != null && Time.GetTicksMsec() / 1000.0 < _bannerUntil;
-        if (!show) { if (_layer != null) _layer.Visible = false; return; }
-        var tree = (SceneTree)Engine.GetMainLoop();
-        if (_layer == null)
-        {
-            _layer = new CanvasLayer { Layer = 128, Name = "SpireLedgerVersionBanner" };
-            tree.Root.AddChild(_layer);
-            _panel = UiTheme.MakePanel(0.95f, 1f);
-            _layer.AddChild(_panel);
-            _label = UiTheme.MakeLabel(16, UiTheme.Gold);
-            if (GameAssets.Enabled && GameAssets.KreonBold is Font f) _label.AddThemeFontOverride("font", f);
-            _layer.AddChild(_label);
-        }
-        _layer.Visible = true;
-        var vp = _layer.GetViewport().GetVisibleRect().Size;
-        float s = UiTheme.Scale(vp);
-        _label!.Text = "⚠ " + _banner;
-        _label.AddThemeFontSizeOverride("font_size", Math.Max(10, (int)Math.Round(17 * s)));
-        var size = new Vector2(_label.GetMinimumSize().X + 40f * s, 44f * s);
-        var pos = new Vector2((vp.X - size.X) / 2f, 90f * s);
-        _panel!.Position = pos; _panel.Size = size;
-        _label.Position = pos + new Vector2(20f * s, 9f * s);
-    }
 }
 
 // Hello message carrying the sender's Spire Ledger version. Lowercase first letter on purpose: see above.
