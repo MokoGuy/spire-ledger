@@ -131,6 +131,27 @@ internal static class Loc
         ["avg_given"] = ("GIVEN", "DONNÉE"),
         ["avg_taken"] = ("TAKEN", "SUBIS"),
         ["page"] = ("{0} / {1}", "{0} / {1}"),
+        // Builds tab
+        ["tab_runs"] = ("Runs", "Parties"),
+        ["tab_builds"] = ("Builds", "Builds"),
+        ["b_all"] = ("All ({0})", "Tous ({0})"),
+        ["b_solo"] = ("Solo ({0})", "Solo ({0})"),
+        ["b_coop"] = ("Co-op ({0})", "Co-op ({0})"),
+        ["b_summary"] = ("{0} run(s), {1} win(s) ({2}%)", "{0} partie(s), {1} victoire(s) ({2} %)"),
+        ["b_source"] = ("From the game's run history: every finished run, with or without the mod. Starting cards, starting relics and curses are left out. Green / red: 10 points above / below the column's average.",
+                        "D'après l'historique du jeu : toutes vos parties terminées, avec ou sans le mod. Cartes et reliques de départ et malédictions exclues. Vert / rouge : 10 points au-dessus / en dessous de la moyenne de la colonne."),
+        ["b_sort_taken"] = ("Most taken", "Plus prises"),
+        ["b_sort_rate"] = ("Best win rate ({0}+ runs)", "Meilleur taux ({0}+ parties)"),
+        ["b_characters"] = ("CHARACTERS", "PERSONNAGES"),
+        ["b_relics"] = ("RELICS ({0})", "RELIQUES ({0})"),
+        ["b_cards"] = ("CARDS ({0})", "CARTES ({0})"),
+        ["b_runs_col"] = ("RUNS", "PARTIES"),
+        ["b_win_col"] = ("WINS", "VICTOIRES"),
+        ["b_pick_col"] = ("PICKED", "CHOISIE"),
+        ["b_none"] = ("No finished run in the game's history yet.", "Aucune partie terminée dans l'historique du jeu."),
+        ["pct"] = ("{0}%", "{0} %"),
+        ["final_relics"] = ("Relics ({0}): {1}", "Reliques ({0}) : {1}"),
+        ["final_deck"] = ("Final deck ({0}): {1}", "Deck final ({0}) : {1}"),
     };
 
     public static bool French

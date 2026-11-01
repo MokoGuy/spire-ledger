@@ -39,7 +39,7 @@ internal static class CardInsight
     private static Dictionary<string, Stat>? _history;
     private static ulong _historyFor;
 
-    public static void InvalidateHistory() => _history = null;
+    public static void InvalidateHistory() { _history = null; GameHistory.Invalidate(); }
 
     private static Dictionary<string, Stat> History(ulong localId)
     {
@@ -48,27 +48,12 @@ internal static class CardInsight
         Stat S(string id) => stats.TryGetValue(id, out var s) ? s : stats[id] = new Stat();
         try
         {
-            // 1. The game's run history: final deck + result, every profile (normal and modded). The same run
-            //    can be in several profiles (copied progress), so runs are counted once by start time + seed.
-            var seen = new HashSet<string>();
-            foreach (var file in GameHistoryFiles())
-            {
-                try
+            // 1. The game's run history: final deck + result, every profile (normal and modded).
+            foreach (var run in GameHistory.For(localId))
+                foreach (var id in run.Deck.Select(c => c.Id).Distinct())
                 {
-                    if (JsonNode.Parse(File.ReadAllText(file)) is not JsonObject run) continue;
-                    if ((bool?)run["was_abandoned"] ?? false) continue;
-                    if (!seen.Add($"{run["start_time"]}_{run["seed"]}")) continue;
-                    bool win = (bool?)run["win"] ?? false;
-                    var me = (run["players"] as JsonArray)?.OfType<JsonObject>()
-                        .FirstOrDefault(p => p["id"]?.ToString() == localId.ToString());
-                    if (me?["deck"] is not JsonArray deck) continue;
-                    foreach (var id in deck.OfType<JsonObject>().Select(c => Strip((string?)c["id"])).Where(i => i != null).Distinct())
-                    {
-                        var s = S(id!); s.Runs++; if (win) s.Wins++;
-                    }
+                    var s = S(id); s.Runs++; if (run.Win) s.Wins++;
                 }
-                catch { /* skip a damaged file */ }
-            }
             // 2. Spire Ledger's run files: plays per card for the local player.
             foreach (var run in RunLedger.LoadAll())
             {
@@ -87,24 +72,6 @@ internal static class CardInsight
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] card history failed: {ex.Message}"); }
         _historyFor = localId;
         return _history = stats;
-    }
-
-    private static string? Strip(string? id) => id == null ? null : id.StartsWith("CARD.") ? id.Substring(5) : id;
-
-    // <user data>/<platform>/<account>/{,modded/}profileN/saves/history/*.run
-    private static IEnumerable<string> GameHistoryFiles()
-    {
-        string scoped = ProjectSettings.GlobalizePath(SaveManager.Instance.GetProfileScopedPath(""));
-        var dir = new DirectoryInfo(scoped.TrimEnd('/', '\\'));
-        var account = dir.Parent?.Name == "modded" ? dir.Parent.Parent : dir.Parent;
-        if (account == null || !account.Exists) yield break;
-        foreach (var root in new[] { account.FullName, Path.Combine(account.FullName, "modded") })
-            for (int p = 1; p <= 3; p++)
-            {
-                var h = Path.Combine(root, $"profile{p}", "saves", "history");
-                if (!Directory.Exists(h)) continue;
-                foreach (var f in Directory.GetFiles(h, "*.run").Where(f => f.EndsWith(".run", StringComparison.OrdinalIgnoreCase))) yield return f;
-            }
     }
 
     // ===== Overlay =====

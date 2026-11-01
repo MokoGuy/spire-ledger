@@ -31,6 +31,14 @@ internal static class LedgerScreen
     private static bool _mouseWasDown, _escWasDown;
     private static float _s = 1f;
 
+    // Builds tab: the game's run history for the local player, filtered by character and party size.
+    private static bool _builds;
+    private static List<HistRun>? _hist;
+    private static string? _bChar;                  // character id or null for all
+    private static int _bParty;                     // 0 all, 1 solo, 2 co-op
+    private static BuildSort _bSort;
+    private static int _bPage;
+
     public static bool IsOpen => _layer != null && _layer.Visible;
 
     // ===== Compendium button =====
@@ -89,6 +97,8 @@ internal static class LedgerScreen
             _mate = null;
             _runs = _all;
             _selected = 0; _page = 0;
+            _builds = false; _hist = null; _bChar = null; _bParty = 0; _bSort = BuildSort.MostTaken; _bPage = 0;
+            GameHistory.Invalidate();
             if (_layer == null)
             {
                 var tree = (SceneTree)Engine.GetMainLoop();
@@ -149,6 +159,14 @@ internal static class LedgerScreen
         title.Position = new Vector2(pad, pad * 0.7f);
 
         ImportButton(pad, vp);
+        Tabs(pad, vp, pad * 0.7f);
+        if (_builds)
+        {
+            float by = pad * 0.7f + 52f * _s;
+            BuildsView(pad, by, vp.X - pad * 2f, vp.Y - by - pad * 2.2f);
+            BackButton(pad, vp);
+            return;
+        }
         if (_runs.Count == 0)
         {
             Text(Loc.T("no_runs"), 18, UiTheme.Cream).Position = new Vector2(pad, pad * 0.7f + 70f * _s);
@@ -284,6 +302,17 @@ internal static class LedgerScreen
             }
         }
 
+        // The local player's final relics and deck, from the game's history file of this run.
+        if (FinalBuild(run) is HistRun fb)
+        {
+            ry += 6f * _s;
+            string relics = string.Join(", ", fb.Relics.Select(GameNames.Relic));
+            ry += Wrapped(Loc.T("final_relics", fb.Relics.Count, relics), 13, UiTheme.Cream, x, ry, width, 2) + 4f * _s;
+            string deck = string.Join(", ", BuildStats.GroupDeck(fb.Deck).Select(g =>
+                GameNames.Card(g.Id) + (g.Copies > 1 ? $" ×{g.Copies}" : "") + (g.Upgraded == 0 ? "" : g.Upgraded == g.Copies ? "+" : $" ({g.Upgraded}+)")));
+            ry += Wrapped(Loc.T("final_deck", fb.Deck.Count, deck), 13, UiTheme.Cream, x, ry, width, 3);
+        }
+
         // Fights, newest last; as many as fit.
         ry += 14f * _s;
         Text(Loc.T("fight").ToUpperInvariant(), 14, UiTheme.Gold, bold: true).Position = new Vector2(x, ry);
@@ -300,6 +329,174 @@ internal static class LedgerScreen
             Text(per, 13, Dim, numeric: true).Position = new Vector2(x + width * 0.62f, ry);
             ry += lineH;
         }
+    }
+
+    // ===== Tabs =====
+
+    private static float ChipWidth(string text)
+    {
+        var font = (GameAssets.Enabled ? GameAssets.KreonBold : null) ?? ThemeDB.FallbackFont;
+        int size = Math.Max(8, (int)Math.Round(14 * _s));
+        return font != null ? font.GetStringSize(text, HorizontalAlignment.Left, -1, size).X + 28f * _s : (text.Length * 9.5f + 28f) * _s;
+    }
+
+    // A filter/tab chip at (x, y); returns its width plus the gap after it.
+    private static float Chip(float x, float y, string text, bool active, Action onClick)
+    {
+        float w = ChipWidth(text), h = 34f * _s;
+        var rect = new Rect2(x, y, w, h);
+        _root!.AddChild(new ColorRect { Color = active ? new Color(UiTheme.Gold, 0.3f) : new Color(1f, 1f, 1f, 0.07f), Position = rect.Position, Size = rect.Size });
+        Text(text, 14, active ? UiTheme.Gold : UiTheme.Cream, bold: true).Position = new Vector2(x + 14f * _s, y + 7f * _s);
+        _hits.Add((rect, onClick));
+        return w + 10f * _s;
+    }
+
+    // "Runs | Builds", right-aligned on the title line.
+    private static void Tabs(float pad, Vector2 vp, float y)
+    {
+        string runs = Loc.T("tab_runs"), builds = Loc.T("tab_builds");
+        float x = vp.X - pad - ChipWidth(runs) - ChipWidth(builds) - 10f * _s;
+        x += Chip(x, y, runs, !_builds, () => { _builds = false; Rebuild(); });
+        Chip(x, y, builds, _builds, () => { _builds = true; Rebuild(); });
+    }
+
+    // ===== Builds =====
+
+    private static List<HistRun> History() => _hist ??= GameHistory.For(GameHistory.LocalId());
+
+    // This Ledger run's final build for its local player, from the game's .run file (finished runs only).
+    private static HistRun? FinalBuild(JsonObject run)
+    {
+        try
+        {
+            string key = $"{run["start_time"]}_{run["seed"]}";
+            var local = (run["players"] as JsonArray)?.OfType<JsonObject>().FirstOrDefault(p => (bool?)p["is_local"] ?? false);
+            if (!ulong.TryParse((string?)local?["net_id"], out var id)) return null;
+            var file = GameHistory.Runs().FirstOrDefault(r => BuildStats.KeyOf(r) == key);
+            return file != null ? BuildStats.Parse(file, id) : null;
+        }
+        catch { return null; }
+    }
+
+    private static void BuildsView(float x, float y, float width, float height)
+    {
+        var all = History();
+        if (all.Count == 0) { Text(Loc.T("b_none"), 18, UiTheme.Cream).Position = new Vector2(x, y + 10f * _s); return; }
+
+        // Filters: character chips (counts follow the party filter), then solo / co-op.
+        bool PartyOk(HistRun r) => _bParty == 0 || (_bParty == 1 ? r.Players == 1 : r.Players > 1);
+        var byParty = all.Where(PartyOk).ToList();
+        var partySum = BuildStats.Summarize(byParty);
+        float cx = x;
+        cx += Chip(cx, y, Loc.T("b_all", byParty.Count), _bChar == null, () => SetBuildFilter(null, _bParty));
+        foreach (var (id, t) in partySum.Characters.OrderByDescending(kv => kv.Value.Runs))
+        {
+            string cid = id;
+            cx += Chip(cx, y, $"{GameNames.Character(id)} ({t.Runs})", _bChar == id, () => SetBuildFilter(cid, _bParty));
+        }
+        cx += 30f * _s;
+        int solo = all.Count(r => r.Players == 1), coop = all.Count - solo;
+        cx += Chip(cx, y, Loc.T("b_solo", solo), _bParty == 1, () => SetBuildFilter(_bChar, _bParty == 1 ? 0 : 1));
+        Chip(cx, y, Loc.T("b_coop", coop), _bParty == 2, () => SetBuildFilter(_bChar, _bParty == 2 ? 0 : 2));
+
+        var runs = byParty.Where(r => _bChar == null || r.Character == _bChar).ToList();
+        var sum = BuildStats.Summarize(runs, GameNames.IgnoreCard, GameNames.IgnoreRelic);
+        float top = y + 52f * _s;
+        Text(Loc.T("b_summary", sum.Runs, sum.Wins, Pct(sum.WinRate)), 18, UiTheme.Gold, bold: true).Position = new Vector2(x, top);
+        string rate = Loc.T("b_sort_rate", BuildStats.MinRunsForRate), taken = Loc.T("b_sort_taken");
+        float sx = x + width - ChipWidth(taken) - ChipWidth(rate) - 10f * _s;
+        sx += Chip(sx, top - 4f * _s, taken, _bSort == BuildSort.MostTaken, () => { _bSort = BuildSort.MostTaken; _bPage = 0; Rebuild(); });
+        Chip(sx, top - 4f * _s, rate, _bSort == BuildSort.BestWinRate, () => { _bSort = BuildSort.BestWinRate; _bPage = 0; Rebuild(); });
+        Text(Loc.T("b_source"), 12, Dim).Position = new Vector2(x, top + 28f * _s);
+
+        // Three columns: characters (over the whole party filter, so another one can be picked), relics, cards.
+        float colTop = top + 62f * _s, gap = 36f * _s, rowH = 26f * _s;
+        float charW = width * 0.2f, relicW = (width - charW - gap * 2f) * 0.45f;
+        float cardW = width - charW - relicW - gap * 2f;
+        float listTop = colTop + 46f * _s;
+        int fit = Math.Max(1, (int)((y + height - listTop - 44f * _s) / rowH));
+
+        var chars = partySum.Characters.OrderByDescending(kv => kv.Value.Runs).Take(fit).ToList();
+        Column(x, colTop, charW, Loc.T("b_characters"), chars, partySum.WinRate, GameNames.Character, picks: false,
+               onClick: id => SetBuildFilter(_bChar == id ? null : id, _bParty), selected: _bChar);
+
+        var relics = BuildStats.Rank(sum.Relics, _bSort);
+        var cards = BuildStats.Rank(sum.Cards, _bSort);
+        int pages = Math.Max(1, (Math.Max(relics.Count, cards.Count) + fit - 1) / fit);
+        _bPage = Math.Clamp(_bPage, 0, pages - 1);
+        float rx = x + charW + gap, kx = rx + relicW + gap;
+        Column(rx, colTop, relicW, Loc.T("b_relics", relics.Count), relics.Skip(_bPage * fit).Take(fit).ToList(),
+               BuildStats.PooledRate(sum.Relics.Values), GameNames.Relic, picks: false);
+        Column(kx, colTop, cardW, Loc.T("b_cards", cards.Count), cards.Skip(_bPage * fit).Take(fit).ToList(),
+               BuildStats.PooledRate(sum.Cards.Values), GameNames.Card, picks: true);
+        if (pages > 1)
+        {
+            float py = listTop + fit * rowH + 6f * _s;
+            Arrow("◀", new Vector2(rx, py), () => { _bPage = Math.Max(0, _bPage - 1); Rebuild(); });
+            Text(Loc.T("page", _bPage + 1, pages), 15, UiTheme.Cream).Position = new Vector2(rx + 50f * _s, py + 4f * _s);
+            Arrow("▶", new Vector2(rx + 130f * _s, py), () => { _bPage = Math.Min(pages - 1, _bPage + 1); Rebuild(); });
+        }
+    }
+
+    private static void SetBuildFilter(string? character, int party)
+    {
+        _bChar = character; _bParty = party; _bPage = 0;
+        Rebuild();
+    }
+
+    // One ranked list: name, runs, win rate (green/red when 10 points above/below `baseline`, the filter's
+    // overall rate, with a small bar), and for cards how often they were picked when offered.
+    private static void Column(float x, float y, float width, string title, List<KeyValuePair<string, Tally>> rows, double baseline,
+                               Func<string, string> name, bool picks, Action<string>? onClick = null, string? selected = null)
+    {
+        Text(title, 15, UiTheme.Gold, bold: true).Position = new Vector2(x, y);
+        float winX = x + width - 120f * _s, runsX = winX - 80f * _s, pickX = runsX - 100f * _s;
+        float capY = y + 24f * _s;
+        Text(Loc.T("b_runs_col"), 11, Dim, bold: true).Position = new Vector2(runsX, capY);
+        Text(Loc.T("b_win_col"), 11, Dim, bold: true).Position = new Vector2(winX, capY);
+        if (picks) Text(Loc.T("b_pick_col"), 11, Dim, bold: true).Position = new Vector2(pickX, capY);
+        float rowH = 26f * _s, ry = y + 46f * _s, nameW = (picks ? pickX : runsX) - x - 10f * _s;
+        foreach (var (id, t) in rows)
+        {
+            bool sel = selected != null && selected == id;
+            if (onClick != null)
+            {
+                var rect = new Rect2(x - 6f * _s, ry - 2f * _s, width + 6f * _s, rowH - 2f * _s);
+                _root!.AddChild(new ColorRect { Color = sel ? new Color(UiTheme.Gold, 0.18f) : new Color(1f, 1f, 1f, 0.04f), Position = rect.Position, Size = rect.Size });
+                string cid = id;
+                _hits.Add((rect, () => onClick(cid)));
+            }
+            var n = Text(name(id), 14, sel ? UiTheme.Gold : UiTheme.Cream);
+            n.Position = new Vector2(x, ry); n.ClipText = true; n.Size = new Vector2(nameW, rowH);
+            if (picks && t.Offered > 0) Text($"{t.Picked}/{t.Offered}", 14, Dim, numeric: true).Position = new Vector2(pickX, ry);
+            Text(t.Runs.ToString(), 14, UiTheme.Cream, numeric: true).Position = new Vector2(runsX, ry);
+            var verdict = t.Runs < BuildStats.MinRunsForRate ? Dim
+                : t.WinRate >= baseline + 0.1 ? Green : t.WinRate <= baseline - 0.1 ? UiTheme.Red : UiTheme.Cream;
+            _root!.AddChild(new ColorRect { Color = new Color(verdict, 0.28f), Position = new Vector2(winX, ry + 4f * _s), Size = new Vector2(Math.Max(2f, 100f * _s * (float)t.WinRate), rowH - 10f * _s) });
+            Text(Loc.T("pct", Pct(t.WinRate)), 14, verdict, numeric: true).Position = new Vector2(winX + 6f * _s, ry);
+            ry += rowH;
+        }
+    }
+
+    private static int Pct(double rate) => (int)Math.Round(rate * 100);
+
+    private static readonly Color Green = new(0.45f, 0.85f, 0.45f);
+
+    // A word-wrapped label of at most `maxLines` lines; returns its height.
+    private static float Wrapped(string text, int size, Color color, float x, float y, float width, int maxLines)
+    {
+        var l = Text(text, size, color);
+        l.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        l.MaxLinesVisible = maxLines;
+        l.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
+        l.Position = new Vector2(x, y);
+        l.Size = new Vector2(width, 0f);
+        // A wrapped label with an overrun mode has a 1 px minimum height and draws only the lines that fit
+        // its size, so give it the height of its lines.
+        int lines = Math.Clamp(l.GetLineCount(), 1, maxLines);
+        float h = lines * l.GetLineHeight() + (lines - 1) * l.GetThemeConstant("line_spacing");
+        l.Size = new Vector2(width, h);
+        return h;
     }
 
     // ===== Data helpers =====
@@ -369,24 +566,18 @@ internal static class LedgerScreen
             .GroupBy(m => m.Key).Select(g => (g.Key, Name: g.Last().Name, Count: g.Count()))
             .OrderByDescending(m => m.Count).ToList();
         if (mates.Count == 0) return y - 14f * _s;
-        float cx = x, h = 34f * _s;
-        void Chip(string text, bool active, Action onClick)
+        float cx = x;
+        void MateChip(string text, bool active, Action onClick)
         {
-            float w = (text.Length * 9.5f + 28f) * _s;
-            if (cx + w > x + width) return;
-            var rect = new Rect2(cx, y, w, h);
-            _root!.AddChild(new ColorRect { Color = active ? new Color(UiTheme.Gold, 0.3f) : new Color(1f, 1f, 1f, 0.07f), Position = rect.Position, Size = rect.Size });
-            Text(text, 14, active ? UiTheme.Gold : UiTheme.Cream, bold: true).Position = new Vector2(cx + 14f * _s, y + 7f * _s);
-            _hits.Add((rect, onClick));
-            cx += w + 10f * _s;
+            if (cx + ChipWidth(text) <= x + width) cx += Chip(cx, y, text, active, onClick);
         }
-        Chip(Loc.T("all_runs", _all.Count), _mate == null, () => SetMate(null));
+        MateChip(Loc.T("all_runs", _all.Count), _mate == null, () => SetMate(null));
         foreach (var m in mates)
         {
             var key = m.Key;
-            Chip(Loc.T("with_mate", m.Name, m.Count), _mate == key, () => SetMate(key));
+            MateChip(Loc.T("with_mate", m.Name, m.Count), _mate == key, () => SetMate(key));
         }
-        return y + h;
+        return y + 34f * _s;
     }
 
     private static void SetMate(string? key)

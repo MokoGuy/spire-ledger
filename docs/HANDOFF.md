@@ -34,5 +34,5 @@ Read with `CLAUDE.md` (architecture, testing) and `docs/PUBLISHING.md` (release 
 - Workshop visibility is still `friends_only`: going `unlisted`/`public` is the user's call (after a
   friend has tested the Workshop install on another PC).
 - Card history under card choices not verifiable on Steam-less instances without the history hook.
-- Build tracking (decks/relics per run, win rates) — proposed earlier, not started.
-- Forecast in co-op assumes every attack targets the local player.
+- Build tracking: done after v0.4.0 (Ledger "Builds" tab + final relics/deck in the run detail), not released yet.
+- Forecast in co-op: not a limitation. Every monster attack hits all players (`AttackCommand.FromMonster` → `TargetingAllOpponents`, no monster narrows it), and the intent number is computed against the local creature (`AttackIntent.GetSingleDamage` uses `LocalContext.GetMe`), so the local Vulnerable/Weak/etc. are already in it.

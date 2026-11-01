@@ -31,7 +31,7 @@ For Steam Workshop publishing, `scripts/package-workshop.sh` builds Release, sta
 `dist/workshop/content/`, and runs (or prints) MegaCrit's `ModUploader`. It must run locally with the
 Steam client logged in — never CI. See the "Steam Workshop" section of README.md.
 
-**Requires the .NET 9 SDK.** Unit tests cover the forecast calculator (`tests/`, `dotnet test
+**Requires the .NET 9 SDK.** Unit tests cover the forecast calculator, `ShareSplit` and `BuildStats` (`tests/`, `dotnet test
 tests/SpireLedger.Tests.csproj -p:STS2GameDir=...`); everything else is verified manually: rebuild,
 copy the DLL into `mods/`, **restart the game** (mods load at startup), and watch in-game. Never overwrite
 the DLL in place while the game runs (it is memory-mapped); stage it and `mv` it into place. `GD.Print("[SpireLedger] ...")`
@@ -104,7 +104,11 @@ text/visibility change needs the user's explicit OK **for that version**; this r
   the game's cloud sync prunes). Id = `<RunManager._startTime>_<seed>_<local NetId>`. Written after each
   resolved fight and at game over; re-folded into `RunAggregate` on continue.
 - `LedgerScreen.cs` — Compendium button (a signal-less `Duplicate` of `_statisticsButton`) + full-screen
-  history view on its own CanvasLayer, poll-based mouse like the other views.
+  history view on its own CanvasLayer, poll-based mouse like the other views. Two tabs: runs, and Builds.
+- `GameHistory.cs` — reads the game's own `.run` history files (all profiles, deduped by start time + seed;
+  solo runs store their player as id 1) for the card history and the Builds tab; `GameNames` resolves ids
+  to localized titles and the starting cards/relics left out of the rankings. `BuildStats.cs` is the pure,
+  unit-tested aggregation (win rates per character/relic/card, pick rates, pooled column baseline).
 - `ProgressImport.cs` — copies a normal profile's progress into a modded profile (source and target
   picked in a dialog; offered on the main menu when the modded profile has fewer unlocks, and reopened
   from a button under the main menu's `ChangeProfileButton` — usable on an empty profile — or the Ledger). Writes through the game's `ISaveStore` (local + Steam Cloud, timestamps aligned) after a backup.
