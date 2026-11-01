@@ -207,6 +207,9 @@ page). `scripts/package-workshop.sh` is the macOS equivalent inherited from Dama
 - `party_hud`: co-op only — each player's damage this fight and share of the party, `"list"` (default)
   next to each player in the party list at the top left, `"characters"` above each character, or `"off"`.
   In combat, **`N`** (`party_hotkey`) cycles list → characters → off.
+- `forecast_dock`: where the docked forecast (and the chart stacked on it) sits around your character:
+  `"left"` (default), `"right"`, `"above"` or `"below"`. In co-op, `"right"` or `"above"` keep your
+  teammate visible.
 - `forecast_hotkey` / `bars_hotkey`: the in-combat toggles for the forecast (default `v`) and the damage
   chart (default `b`); same syntax as `hotkey`. Toggling saves `forecast` / `show_bars`.
 - `forecast_anchor`: `"player"` (default) docks the forecast beside your character; dragging it switches

@@ -45,6 +45,7 @@ public static partial class DamageChartsMod
     // Forecast placement: "player" (default) docks it beside the local player's creature, clear of enemy
     // intents; "free" uses the dragged/saved fraction. Dragging the panel switches to free.
     private static bool _fcAnchorPlayer = true;
+    private static string _fcDock = "left"; // forecast_dock: left / right / above / below the player
     private static string _lastForecastLog = "";
 
     private static readonly DamageTracker _tracker = new();
@@ -214,6 +215,7 @@ public static partial class DamageChartsMod
             if (root.TryGetProperty("forecast_pos_x_frac", out var fpx) && fpx.TryGetSingle(out var ffx)) _fcPosXFrac = ffx;
             if (root.TryGetProperty("forecast_pos_y_frac", out var fpy) && fpy.TryGetSingle(out var ffy)) _fcPosYFrac = ffy;
             _fcAnchorPlayer = !(root.TryGetProperty("forecast_anchor", out var fan) && fan.ValueKind == JsonValueKind.String && fan.GetString() == "free");
+            _fcDock = ReadDock(root) ?? _fcDock;
             if (root.TryGetProperty("forecast_debug", out var fdb) && fdb.ValueKind == JsonValueKind.True) ForecastReader.Debug = true;
             if (root.TryGetProperty("summary_on_combat_end", out var su) && su.ValueKind == JsonValueKind.False) _summaryOnEnd = false;
             if (root.TryGetProperty("run_recap", out var rr) && rr.ValueKind == JsonValueKind.False) _recapEnabled = false;
@@ -257,6 +259,7 @@ public static partial class DamageChartsMod
                 ["forecast_pos_x_frac"] = _fcForecastPosRounded().X,
                 ["forecast_pos_y_frac"] = _fcForecastPosRounded().Y,
                 ["forecast_anchor"] = _fcAnchorPlayer ? "player" : "free",
+                ["forecast_dock"] = _fcDock,
                 ["bars_style"] = _barsCompact ? "compact" : "full",
                 ["bars_anchor"] = _barsDocked ? "forecast" : "free",
                 ["native_visuals"] = GameAssets.Enabled,
@@ -315,6 +318,7 @@ public static partial class DamageChartsMod
                 _showBars = showBars;
                 if (!_showBars) _bars?.Hide();
             }
+            _fcDock = ReadDock(root) ?? _fcDock;
             bool showForecast = !(root.TryGetProperty("forecast", out var fc2) && fc2.ValueKind == JsonValueKind.False);
             if (showForecast != _showForecast)
             {
@@ -335,6 +339,10 @@ public static partial class DamageChartsMod
         try { return ((SceneTree)Engine.GetMainLoop()).Root.GetMousePosition(); }
         catch { return Vector2.Zero; }
     }
+
+    private static string? ReadDock(JsonElement root)
+        => root.TryGetProperty("forecast_dock", out var d) && d.ValueKind == JsonValueKind.String
+           && d.GetString() is "left" or "right" or "above" or "below" ? d.GetString() : null;
 
     private static void SetToggle(ref (Key Key, List<Key> Mods, string Spec, bool Down) toggle, string? spec)
     {
@@ -832,6 +840,7 @@ public static partial class DamageChartsMod
                             _bars.Compact = _barsCompact;
                             _bars.Docked = _barsCompact && _barsDocked;
                             _bars.DockRect = _showForecast ? _forecast?.PanelRect : null;
+                            _bars.DockBelow = _fcDock == "below";
                             _bars.Render(_tracker.Snapshot(), Palette);
                             // Poll-based drag + click + hover (no input overrides).
                             if (_bars.UpdateMouse(Input.IsMouseButtonPressed(MouseButton.Left)))
@@ -967,6 +976,7 @@ public static partial class DamageChartsMod
             _forecast.UiScaleMul = _uiScale;
             if (_forecastLedger != null) _forecastLedger.UiScaleMul = _uiScale;
             _forecast.AnchorToPlayer = _fcAnchorPlayer;
+            _forecast.Dock = _fcDock;
             _forecast.AnchorRect = _fcAnchorPlayer ? LocalPlayerHitboxRect() : null;
             _forecast.Render(r);
             if (_forecast.UpdateMouse(Input.IsMouseButtonPressed(MouseButton.Left)))

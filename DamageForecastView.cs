@@ -118,6 +118,8 @@ internal sealed class DamageForecastView
     // fall back to the saved fraction). A drag that moves the panel turns docking off.
     public bool AnchorToPlayer { get; set; } = true;
     public Rect2? AnchorRect { get; set; }
+    // Which side of the player the docked panel goes: "left" (default), "right", "above" or "below".
+    public string Dock { get; set; } = "left";
 
     public bool IsHovered()
     {
@@ -199,9 +201,20 @@ internal sealed class DamageForecastView
                 // the right side if the player stands too close to the left edge. Kept as the fraction so a
                 // drag starts from where the panel is drawn.
                 float gap = 16f * sc;
-                float ax = hb.Position.X - gap - _w;
-                if (ax < margin) ax = hb.End.X + gap;
-                float ay = hb.End.Y - _h;
+                float ax, ay;
+                switch (Dock)
+                {
+                    case "right":   // toward the enemies: usually empty ground in co-op
+                        ax = hb.End.X + gap; ay = hb.End.Y - _h; break;
+                    case "above":   // centered over the head
+                        ax = hb.Position.X + (hb.Size.X - _w) / 2f; ay = hb.Position.Y - gap - _h; break;
+                    case "below":   // centered under the HP bar and the effect icons row
+                        ax = hb.Position.X + (hb.Size.X - _w) / 2f; ay = hb.End.Y + 64f * sc; break;
+                    default:        // left, flipping right near the screen edge
+                        ax = hb.Position.X - gap - _w;
+                        if (ax < margin) ax = hb.End.X + gap;
+                        ay = hb.End.Y - _h; break;
+                }
                 _posFrac = new Vector2(ax / _vp.X, ay / _vp.Y);
             }
             float px = Math.Clamp(_posFrac.X * _vp.X, 0f, Math.Max(0f, _vp.X - _w));

@@ -60,6 +60,8 @@ internal sealed class DamageChartView
     // A drag undocks it, like the forecast's own player anchor.
     public bool Docked { get; set; }
     public Rect2? DockRect { get; set; }
+    // Stack under the forecast instead of above it (when the forecast sits under the player).
+    public bool DockBelow { get; set; }
 
     private Vector2 _posFrac;     // top-left as fraction of viewport
     private bool _posFracInit;
@@ -256,8 +258,8 @@ internal sealed class DamageChartView
             {
                 // Above the forecast, left edges aligned; below it if there's no room under the top bar.
                 float gap = 6f * sc;
-                float dy = dock.Position.Y - gap - _h;
-                if (dy < inset) dy = dock.End.Y + gap;
+                float dy = DockBelow ? dock.End.Y + gap : dock.Position.Y - gap - _h;
+                if (!DockBelow && dy < inset) dy = dock.End.Y + gap;
                 _posFrac = new Vector2(dock.Position.X / _vp.X, dy / _vp.Y);
             }
             float px = Math.Clamp(_posFrac.X * _vp.X, 0f, Math.Max(0f, _vp.X - _w));
