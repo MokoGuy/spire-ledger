@@ -697,6 +697,7 @@ public static partial class DamageChartsMod
             HandleHotkey();
             LedgerScreen.Tick();
             ProgressImport.Tick(SafeIsRunInProgress());
+            ModVersion.Tick();
 
             // Run lifecycle: a fresh run (not-in-progress -> in-progress) clears the run-wide aggregate
             // so the recap never shows a previous run's data.

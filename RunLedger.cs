@@ -95,6 +95,7 @@ internal static class RunLedger
         if (_doc == null) return;
         try
         {
+            NoteModVersions();
             var combats = _doc["combats"] as JsonArray ?? new JsonArray();
             _doc["combats"] = combats;
             var players = new JsonArray();
@@ -112,6 +113,17 @@ internal static class RunLedger
             Save();
         }
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] ledger combat write failed: {ex.Message}"); }
+    }
+
+    // Each player's Spire Ledger version, when known (ours, and teammates' from their hello message).
+    private static void NoteModVersions()
+    {
+        if (_doc?["players"] is not JsonArray ps) return;
+        foreach (var p in ps.OfType<JsonObject>())
+        {
+            if ((bool?)p["is_local"] ?? false) p["mod_version"] = ModVersion.Version;
+            else if (ulong.TryParse((string?)p["net_id"], out var id) && ModVersion.PeerVersions.TryGetValue(id, out var v)) p["mod_version"] = v;
+        }
     }
 
     // Game over: result, badges per player (NetId -> badge ids) and the game's own counters.

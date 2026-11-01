@@ -145,7 +145,7 @@ internal static class LedgerScreen
         backdrop.SetSize(vp);
 
         float pad = Math.Max(32f, vp.X * 0.04f);
-        var title = Text(Loc.T("ledger_title"), 30, UiTheme.Gold, bold: true);
+        var title = Text($"{Loc.T("ledger_title")}   v{ModVersion.Version}", 30, UiTheme.Gold, bold: true);
         title.Position = new Vector2(pad, pad * 0.7f);
 
         ImportButton(pad, vp);

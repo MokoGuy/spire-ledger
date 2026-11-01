@@ -93,6 +93,8 @@ internal static class Loc
         ["import_failed"] = ("The import failed: {0}", "L'import a échoué : {0}"),
         ["import_done_title"] = ("Progress imported", "Progression importée"),
         ["import_done_body"] = ("Restart the game so every unlock is taken into account.", "Redémarrez le jeu pour que tous les déblocages soient pris en compte."),
+        ["version_mismatch"] = ("{0} has Spire Ledger {1}, you have {2}: update so you both see the same stats.",
+                                "{0} a Spire Ledger {1}, vous {2} : mettez à jour pour voir les mêmes stats."),
         ["import_menu_button"] = ("Import progress", "Importer une progression"),
         ["import_button"] = ("Import my unmodded progress", "Importer ma progression sans mods"),
         ["import_nothing"] = ("This profile already has all your unlocks ({0}).", "Ce profil a déjà tous vos déblocages ({0})."),

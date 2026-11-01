@@ -529,7 +529,7 @@ internal sealed class DamageDetailView
 
             var header = Next(ref cur, full ? 22 : 16, UiTheme.Gold, FontRole.Bold);
             header.Text = recap
-                ? $"{Loc.T("run_recap")}{who}     ({Loc.T("to_close", HotkeyHint)})"
+                ? $"{Loc.T("run_recap")}{who}     ({Loc.T("to_close", HotkeyHint)})     Spire Ledger v{ModVersion.Version}"
                 : SummaryMode
                     ? $"{Loc.T("combat_summary")}{who}     ({Loc.T("to_dismiss", HotkeyHint)})"
                     : $"{Loc.T("combat_stats")}{who}     ({Loc.T("to_close", HotkeyHint)})";
