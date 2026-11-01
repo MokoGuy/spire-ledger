@@ -48,6 +48,7 @@ internal static class Loc
         ["party"] = ("PARTY", "ÉQUIPE"),
         ["player"] = ("PLAYER", "JOUEUR"),
         ["effects"] = ("EFFECTS", "EFFETS"),
+        ["debuffs"] = ("DEBUFFS", "DÉBUFFS"),
         ["block_given"] = ("GIVEN", "DONNÉE"),
         ["cards"] = ("CARDS", "CARTES"),
         ["energy"] = ("ENERGY", "ÉNERGIE"),

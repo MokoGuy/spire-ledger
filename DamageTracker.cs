@@ -42,6 +42,7 @@ internal sealed class PlayerSources
     public List<SourceEntry> Effects = new();  // powers applied to enemies/allies: name, total stacks, icon
     public long EffectsTotal;    // total stacks applied
     public long CardsPlayed;
+    public long DebuffsApplied;  // debuff applications on others, counted like the game's Debuffer badge
     public long EnergySpent;
     public long BlockGiven;      // block this player's cards gave to other players
     public long BiggestHit;      // largest single damage instance dealt
@@ -99,6 +100,7 @@ internal sealed class DamageTracker
     private readonly Dictionary<int, Dictionary<string, long>> _potionsByPlayer = new(); // slot -> potion -> uses
     private readonly Dictionary<int, Dictionary<string, long>> _effectsByPlayer = new(); // slot -> power -> stacks
     private readonly Dictionary<int, long> _cardsByPlayer = new();
+    private readonly Dictionary<int, long> _debuffsByPlayer = new();
     private readonly Dictionary<int, Dictionary<string, long>> _cardPlaysByPlayer = new();
     private readonly Dictionary<int, long> _energyByPlayer = new();
     private readonly Dictionary<int, long> _blockGivenByPlayer = new();
@@ -125,6 +127,7 @@ internal sealed class DamageTracker
             _potionsByPlayer.Clear();
             _effectsByPlayer.Clear();
             _cardsByPlayer.Clear();
+            _debuffsByPlayer.Clear();
             _cardPlaysByPlayer.Clear();
             _energyByPlayer.Clear();
             _blockGivenByPlayer.Clear();
@@ -200,6 +203,8 @@ internal sealed class DamageTracker
     }
 
     public void AddEnergy(int slot, int amount) => AddTotal(_energyByPlayer, slot, amount);
+
+    public void AddDebuffApplied(int slot) => AddTotal(_debuffsByPlayer, slot, 1);
 
     public void AddBlockGiven(int slot, int amount) => AddTotal(_blockGivenByPlayer, slot, amount);
 
@@ -279,6 +284,7 @@ internal sealed class DamageTracker
                 ps.Potions = SortedList(_potionsByPlayer, s, out _);
                 ps.Effects = SortedList(_effectsByPlayer, s, out ps.EffectsTotal);
                 _cardsByPlayer.TryGetValue(s, out ps.CardsPlayed);
+                _debuffsByPlayer.TryGetValue(s, out ps.DebuffsApplied);
                 if (_cardPlaysByPlayer.TryGetValue(s, out var plays)) ps.CardPlays = new Dictionary<string, long>(plays);
                 _energyByPlayer.TryGetValue(s, out ps.EnergySpent);
                 _blockGivenByPlayer.TryGetValue(s, out ps.BlockGiven);

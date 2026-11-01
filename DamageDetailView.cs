@@ -574,7 +574,7 @@ internal sealed class DamageDetailView
         head.Text = Loc.T("party");
         head.SetPosition(new Vector2(x, top));
 
-        string[] caps = { Loc.T("dealt"), Loc.T("effects"), Loc.T("block_given"), Loc.T("block"), Loc.T("taken"),
+        string[] caps = { Loc.T("dealt"), Loc.T("debuffs"), Loc.T("block_given"), Loc.T("block"), Loc.T("taken"),
                           Loc.T("healed"), Loc.T("cards"), Loc.T("energy"), Loc.T("dmg_per_energy"), Loc.T("biggest") };
         int n = snap.PlayerCount;
         var values = new long[n][];
@@ -582,7 +582,8 @@ internal sealed class DamageDetailView
         {
             var p = s < snap.PerPlayer.Length ? snap.PerPlayer[s] : new PlayerSources();
             long perEnergy = p.EnergySpent > 0 ? (long)Math.Round((double)p.DealtTotal / p.EnergySpent) : 0;
-            values[s] = new[] { p.DealtTotal, p.EffectsTotal, p.BlockGiven, p.BlockTotal, p.TakenTotal,
+            // DEBUFFS counts applications like the game's Debuffer badge (stacks would favour big numbers).
+            values[s] = new[] { p.DealtTotal, p.DebuffsApplied, p.BlockGiven, p.BlockTotal, p.TakenTotal,
                                 p.HealTotal, p.CardsPlayed, p.EnergySpent, perEnergy, p.BiggestHit };
         }
 

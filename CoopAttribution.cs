@@ -91,6 +91,15 @@ public static partial class DamageChartsMod
                 n++;
             }
             GD.Print($"[SpireLedger] history hooks applied ({n}/4)");
+
+            // Debuffs applied, exactly like the game's Debuffer badge (DebufferModel.AfterPowerAmountChanged):
+            // +1 per application whose amount makes it a debuff (a Strength loss counts), not a temporary
+            // power, by a player on someone else. Hook.AfterPowerAmountChanged runs in solo too.
+            var hook = AccessTools.TypeByName("MegaCrit.Sts2.Core.Hooks.Hook");
+            var apac = hook != null ? AccessTools.Method(hook, "AfterPowerAmountChanged") : null;
+            if (apac != null)
+                h.Patch(apac, prefix: new HarmonyMethod(typeof(DamageChartsMod).GetMethod(nameof(PowerAmountChangedPrefix), BindingFlags.NonPublic | BindingFlags.Static)));
+            else GD.Print("[SpireLedger] Hook.AfterPowerAmountChanged not found; debuff count disabled");
         }
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] history hooks skipped: {ex.GetType().Name}: {ex.Message}"); }
     }
@@ -122,6 +131,20 @@ public static partial class DamageChartsMod
             }
         }
         catch { /* never disrupt combat */ }
+    }
+
+    private static void PowerAmountChangedPrefix(PowerModel power, decimal amount, Creature? applier)
+    {
+        if (_disabled) return;
+        try
+        {
+            if (power == null || applier?.Player == null || ReferenceEquals(applier, power.Owner)) return;
+            if (power is MegaCrit.Sts2.Core.Models.ITemporaryPower) return;
+            if (power.GetTypeForAmount(amount) != MegaCrit.Sts2.Core.Entities.Powers.PowerType.Debuff) return;
+            int slot = SlotOf(applier.Player);
+            if (slot >= 0) _tracker.AddDebuffApplied(slot);
+        }
+        catch { }
     }
 
     private static void CardPlayFinishedPostfix(object cardPlay)
@@ -221,6 +244,8 @@ public static partial class DamageChartsMod
                     ["debuffs_applied"] = p.ExtraFields?.DebuffsApplied ?? 0,
                 };
             }
+            // The last fight hasn't ended yet on the game-over screen: record it now so it counts.
+            if (SafeIsInCombat() && !_combatRecorded) RecordCombat(resolved: true);
             RunLedger.SetResult(won, run.FloorReached, badges, titlesJson, stats);
             OnRunEnded();
             GD.Print($"[SpireLedger] run result recorded (won={won}, badges for {LastBadges.Count} player(s))");

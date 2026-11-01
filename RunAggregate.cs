@@ -28,6 +28,7 @@ internal sealed class RunAggregate
     private long[] _cards = Array.Empty<long>();
     private Dictionary<string, long>[] _cardPlays = Array.Empty<Dictionary<string, long>>();
     private long[] _energy = Array.Empty<long>();
+    private long[] _debuffs = Array.Empty<long>();
     private long[] _blockGiven = Array.Empty<long>();
     private long[] _biggest = Array.Empty<long>();
     private string[] _biggestSrc = Array.Empty<string>();
@@ -71,7 +72,7 @@ internal sealed class RunAggregate
         _labels = Array.Empty<string>();
         _dealt = _taken = _heal = _block = Array.Empty<long>();
         _dealtBySource = _takenBySource = _effectsBySource = _potionsBySource = Array.Empty<Dictionary<string, long>>();
-        _cards = _energy = _blockGiven = _biggest = Array.Empty<long>();
+        _cards = _energy = _blockGiven = _biggest = _debuffs = Array.Empty<long>();
         _cardPlays = Array.Empty<Dictionary<string, long>>();
         _biggestSrc = Array.Empty<string>();
         _sourceIcon.Clear();
@@ -109,6 +110,7 @@ internal sealed class RunAggregate
             _cards[s] += ps.CardsPlayed;
             foreach (var (id, n) in ps.CardPlays) { _cardPlays[s].TryGetValue(id, out long c); _cardPlays[s][id] = c + n; }
             _energy[s] += ps.EnergySpent;
+            _debuffs[s] += ps.DebuffsApplied;
             _blockGiven[s] += ps.BlockGiven;
             if (ps.BiggestHit > _biggest[s]) { _biggest[s] = ps.BiggestHit; _biggestSrc[s] = ps.BiggestHitSource; }
             encD[s] = (int)Math.Min(int.MaxValue, ps.DealtTotal);
@@ -142,6 +144,7 @@ internal sealed class RunAggregate
         _cards = new long[_playerCount];
         _cardPlays = new Dictionary<string, long>[_playerCount];
         _energy = new long[_playerCount];
+        _debuffs = new long[_playerCount];
         _blockGiven = new long[_playerCount];
         _biggest = new long[_playerCount];
         _biggestSrc = new string[_playerCount];
@@ -182,6 +185,7 @@ internal sealed class RunAggregate
                 CardsPlayed = _cards[s],
                 CardPlays = new Dictionary<string, long>(_cardPlays[s]),
                 EnergySpent = _energy[s],
+                DebuffsApplied = _debuffs[s],
                 BlockGiven = _blockGiven[s],
                 BiggestHit = _biggest[s],
                 BiggestHitSource = _biggestSrc[s],

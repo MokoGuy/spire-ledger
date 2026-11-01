@@ -252,7 +252,7 @@ internal static class LedgerScreen
 
         // Party totals over the run.
         var totals = Totals(run);
-        string[] caps = { Loc.T("dealt"), Loc.T("effects"), Loc.T("block_given"), Loc.T("block"), Loc.T("taken"), Loc.T("healed"), Loc.T("cards"), Loc.T("energy"), Loc.T("biggest") };
+        string[] caps = { Loc.T("dealt"), Loc.T("debuffs"), Loc.T("block_given"), Loc.T("block"), Loc.T("taken"), Loc.T("healed"), Loc.T("cards"), Loc.T("energy"), Loc.T("biggest") };
         float nameW = width * 0.22f, cellW = (width - nameW) / caps.Length, capY = y + 32f * _s;
         for (int c = 0; c < caps.Length; c++) Text(caps[c], 11, Dim, bold: true).Position = new Vector2(x + nameW + c * cellW, capY);
         float ry = capY + 20f * _s;
@@ -316,7 +316,7 @@ internal static class LedgerScreen
                 int s = (int?)p["slot"] ?? 0;
                 if (s < 0 || s >= t.Length) continue;
                 t[s].Dealt += (long?)p["dealt"] ?? 0;
-                t[s].Effects += (long?)p["effects_total"] ?? 0;
+                t[s].Effects += (long?)p["debuffs_applied"] ?? 0; // runs before 0.3 have no count: 0
                 t[s].BlockGiven += (long?)p["block_given"] ?? 0;
                 t[s].Block += (long?)p["block"] ?? 0;
                 t[s].Taken += (long?)p["taken"] ?? 0;
@@ -418,7 +418,7 @@ internal static class LedgerScreen
             }
         }
         Text(Loc.T("mate_summary", mateName, runs, wins), 16, UiTheme.Gold, bold: true).Position = new Vector2(x, y);
-        string[] caps = { Loc.T("avg_dealt"), Loc.T("avg_effects"), Loc.T("avg_given"), Loc.T("avg_taken"), Loc.T("biggest") };
+        string[] caps = { Loc.T("avg_dealt"), Loc.T("debuffs"), Loc.T("avg_given"), Loc.T("avg_taken"), Loc.T("biggest") };
         long Avg(long v) => runs > 0 ? (long)Math.Round((double)v / runs) : 0;
         long[] a = { Avg(me.Dealt), Avg(me.Effects), Avg(me.BlockGiven), Avg(me.Taken), me.Biggest };
         long[] b = { Avg(mate.Dealt), Avg(mate.Effects), Avg(mate.BlockGiven), Avg(mate.Taken), mate.Biggest };

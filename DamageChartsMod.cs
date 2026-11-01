@@ -1042,6 +1042,7 @@ public static partial class DamageChartsMod
         _combatResolved = false; // until enemies/player actually die, this combat hasn't ended naturally
         _allEnemiesDeadFrames = 0;
         _lastRound = 0;
+        _combatRecorded = false;
         _frozenForecast = null;
         _localSlot = localSlot;
         _tracker.Reset(_players.Count, labels, localSlot);
@@ -1072,9 +1073,7 @@ public static partial class DamageChartsMod
         _tooltip?.Hide();
         _forecast?.Hide(); _forecastLedger?.Hide();
         // Fold this combat into the run-wide aggregate before the next combat's Reset() wipes the tracker.
-        if (_tracker.HasData()) _run.Fold(_tracker.SourceSnapshot(), _tracker.Snapshot());
-        // Only fights that really ended go to the run history: quitting mid-fight replays it on continue.
-        if (_combatResolved && _tracker.HasData()) RunLedger.AddCombat(_tracker.SourceSnapshot(), _lastRound);
+        if (!_combatRecorded) RecordCombat(resolved: _combatResolved);
         // Auto-show the breakdown as an end-of-combat summary (until dismissed / map / next fight), but
         // only for a real win/loss — not when the player abandons combat (e.g. quits to the menu).
         _summaryActive = _summaryOnEnd && _combatResolved && _tracker.HasData();
@@ -1270,6 +1269,18 @@ public static partial class DamageChartsMod
     }
     private static int _allEnemiesDeadFrames;
     private static int _lastRound; // highest round seen this combat (for the run history)
+    private static bool _combatRecorded; // this fight already folded/written (e.g. at game over)
+
+    // Fold the fight into the run aggregate, and write it to the run history if it really ended
+    // (quitting mid-fight replays it on continue). Called at combat end, or earlier at game over: the
+    // game-over screen shows while the last fight is still "in progress", and the player may quit there.
+    private static void RecordCombat(bool resolved)
+    {
+        _combatRecorded = true;
+        if (!_tracker.HasData()) return;
+        _run.Fold(_tracker.SourceSnapshot(), _tracker.Snapshot());
+        if (resolved) RunLedger.AddCombat(_tracker.SourceSnapshot(), _lastRound);
+    }
 
     private static void OnBlockChanged(Creature creature, int oldBlock, int newBlock)
     {
