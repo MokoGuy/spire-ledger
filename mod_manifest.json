@@ -3,7 +3,7 @@
   "name": "Spire Ledger",
   "author": "MokoGuy (fork of Damage Charts by zaxnyd)",
   "description": "Co-op stats for Slay the Spire 2: your own stats under every card offered; each player's damage next to their name (Poison and Doom credited to whoever applied them); a forecast of the HP you're about to lose; an end-of-run recap with the numbers behind each player's badges; and a Ledger in the Compendium comparing you with each teammate over all your runs. The mod only observes: friends without it can still join.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "min_game_version": "0.107.1",
   "has_pck": false,
   "has_dll": true,
