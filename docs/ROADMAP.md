@@ -8,6 +8,12 @@ run, and across runs. Both players install the mod. Distribution: GitHub Release
 Fork, rename to SpireLedger, build against the local install, `scripts/import-vanilla-progress.ps1`
 to carry unlocks (Daily Climb) into the modded save profile.
 
+## Ongoing — UI that fits the game
+
+Iterate on the panels so they look native: translate the mod's own labels (DEALT, TAKEN, Combat Stats,
+Damage / Round, Combat Log, Round… are English while the game runs in French) through the game's
+locale, tighten the sparse full-screen layout, use the game's own back button.
+
 ## Phase 1 — Correct multiplayer attribution
 
 Damage with no direct dealer (Poison, Doom, some powers) is credited to the local player
