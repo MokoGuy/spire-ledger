@@ -24,7 +24,8 @@
 |---|---|---|---|
 | ![](docs/screenshots/ui_coop_combat_stats.jpg) | ![](docs/screenshots/ui_gameover_recap.jpg) | ![](docs/screenshots/ui_compendium_button.jpg) | ![](docs/screenshots/ui_ledger_screen.jpg) |
 
-**Install:** download the zip from Releases (or build it, below), copy `SpireLedger.dll` and
+**Install:** subscribe on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895)
+(friends-only for now), or download the zip from Releases (or build it, below), copy `SpireLedger.dll` and
 `SpireLedger.json` into the game's `mods` folder, start the game and accept loading mods. Both co-op
 players need the same version.
 
@@ -150,7 +151,8 @@ on first launch). Restart the game after replacing the DLL — mods load at star
 
 ### Players
 
-Spire Ledger is on the Workshop as a **friends-only** item for now (link added after the first upload).
+Spire Ledger is on the Workshop as a **friends-only** item for now:
+[steamcommunity.com/sharedfiles/filedetails/?id=3831558895](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895).
 Subscribe, enable it in **Settings → Mods** and restart the game. Both co-op players need it.
 
 ### Maintainers (publishing, Windows)
