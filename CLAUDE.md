@@ -115,7 +115,7 @@ text/visibility change needs the user's explicit OK **for that version**; this r
   (K:/Projets/sts2-tools/STS2MCP, branch `local-hardening`: no CORS, `STS2MCP_PORT`, console, screenshot,
   custom_embark, key, click_node). Steam-less instances: `--force-steam off` (saves under
   `%APPDATA%/SlayTheSpire2/default`), co-op on one PC with `--fastmp host_custom` / `--fastmp join`.
-  Never leave STS2_MCP.dll in `mods/` after a test session (`sts2.py uninstall`).
+  STS2MCP may stay in `mods/` between sessions (user OK, 2026-11-01; it declares `affects_gameplay: false`).
 
 ## Conventions & gotchas
 

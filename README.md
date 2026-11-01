@@ -23,15 +23,20 @@
   past runs it was in your final deck and how many you won (from the game's own run history, so runs
   played without the mod count too), plus plays per run from Spire Ledger's run files.
 - **In-combat toggles**: `V` forecast, `B` damage chart, `N` co-op party damage next to the player list.
+  The forecast and chart sit above your character by default (`forecast_dock`: above / left / right / below).
 - The mod's own labels follow the game language (French / English).
 
-| Co-op combat: damage next to each player, forecast | Forecast: HP and max HP about to be lost |
+<img src="docs/screenshots/marketing/0_main.png" width="480" alt="Spire Ledger: co-op stats for Slay the Spire 2">
+
+| Card choices with your own stats | Party damage next to each name, live |
 |---|---|
-| ![](docs/screenshots/1_coop_combat.jpg) | ![](docs/screenshots/2_forecast_max_hp.jpg) |
-| **Card choices: copies in deck, plays, history** | **Ledger: runs with a teammate, you vs them** |
-| ![](docs/screenshots/3_card_choice.jpg) | ![](docs/screenshots/5_ledger_teammate.jpg) |
-| **End-of-run recap with badges** | **One-click progress import** |
-| ![](docs/screenshots/ui_gameover_recap.jpg) | ![](docs/screenshots/4_import_progress.jpg) |
+| ![](docs/screenshots/marketing/1_card_choices.jpg) | ![](docs/screenshots/marketing/2_party_damage.jpg) |
+| **Forecast of the HP you're about to lose** | **End-of-run recap: the numbers behind each badge** |
+| ![](docs/screenshots/marketing/3_forecast.jpg) | ![](docs/screenshots/marketing/4_run_recap.jpg) |
+| **Ledger: you vs your teammate** | **One-click progress import** |
+| ![](docs/screenshots/marketing/5_ledger.jpg) | ![](docs/screenshots/4_import_progress.jpg) |
+
+French versions and the sources of these images: [docs/marketing](docs/marketing/).
 
 **Install:** subscribe on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895)
 (friends-only for now), or download the zip from Releases (or build it, below), copy `SpireLedger.dll` and

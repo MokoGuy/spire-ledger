@@ -46,7 +46,7 @@ Follow `docs/marketing/BRIEF.md`. Decisions already taken by the user:
 - `python -I scripts/dev/sts2.py autoplay FLOOR [pick=I]` (new, **untested**): plays the run (fights,
   map, events, rewards, rest, shop) to reach a floor — needed for badges (≥ 5 act-1 floors) and real
   per-card plays. Run it on both ports concurrently in co-op (`STS2_API=multiplayer`).
-- Always: `sts2.py install` before, `sts2.py uninstall` + delete `mods/STS2_MCP.conf` after; never deploy
+- `sts2.py install` once (STS2MCP may stay in `mods/`, user OK 2026-11-01); never deploy
   while the user's game runs (`tasklist | grep SlayTheSpire2`, check the process has no `--force-steam`).
   Move test run files out of `%APPDATA%\SlayTheSpire2\SpireLedger\runs` afterwards (keep the user's
   `*_2P_76561198040385943.json`).

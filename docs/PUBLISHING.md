@@ -19,7 +19,7 @@ release, tag, push a release, or upload to the Workshop.
 
 1. **Test in game** on the current game version (`scripts/dev/sts2.py`, see CLAUDE.md): load without
    errors (`sts2.py log`), a solo fight, a local co-op fight (`scripts/dev/coop-start.sh`), the recap and
-   the Ledger. Remove the test tool afterwards (`sts2.py uninstall`).
+   the Ledger. STS2MCP may stay installed.
 2. **Version** — semantic: `0.x.y`, bump minor for features, patch for fixes. The version lives in
    `mod_manifest.json` (`release.ps1 -Version` writes it). The game builds the co-op compatibility list
    from `id-version`.
