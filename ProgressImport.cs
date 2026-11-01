@@ -56,28 +56,34 @@ internal static class ProgressImport
         catch { return 0; }
     }
 
-    // (normal profile unlocks, modded profile unlocks), or null when there is nothing to import.
+    // Unlocks (epochs) in a normal or modded profile; -1 when that profile has no progress file.
+    private static int Unlocks(bool modded, int profile)
+    {
+        var store = Store();
+        string path = modded ? ModdedPath(profile) : VanillaPath(profile);
+        if (store == null || !store.FileExists(path)) return -1;
+        return Epochs(store.ReadFile(path));
+    }
+
+    // (normal profile unlocks, modded profile unlocks) for the current profile number, or null when not
+    // running modded or there is no normal progress to import.
     public static (int Vanilla, int Modded)? Counts()
     {
         if (!Modded() || !SaveManager.Instance.IsProfileInitialized) return null;
-        var store = Store();
-        if (store == null) return null;
         int p = Profile();
-        string? vanilla = store.FileExists(VanillaPath(p)) ? store.ReadFile(VanillaPath(p)) : null;
-        if (vanilla == null) return null;
-        string? modded = store.FileExists(ModdedPath(p)) ? store.ReadFile(ModdedPath(p)) : null;
-        return (Epochs(vanilla), Epochs(modded));
+        int vanilla = Unlocks(false, p);
+        return vanilla < 0 ? null : (vanilla, Math.Max(0, Unlocks(true, p)));
     }
 
-    public static bool Import(out string message)
+    public static bool Import(int source, int target, out string message)
     {
         message = "";
         try
         {
             var store = Store();
             if (store == null || !Modded()) { message = "save store unavailable"; return false; }
-            int p = Profile();
-            string? vanilla = store.ReadFile(VanillaPath(p));
+            int p = target;
+            string? vanilla = store.FileExists(VanillaPath(source)) ? store.ReadFile(VanillaPath(source)) : null;
             if (string.IsNullOrWhiteSpace(vanilla)) { message = "no normal progress"; return false; }
 
             string? current = store.FileExists(ModdedPath(p)) ? store.ReadFile(ModdedPath(p)) : null;
@@ -88,8 +94,9 @@ internal static class ProgressImport
                 File.WriteAllText(Path.Combine(dir, $"modded-profile{p}-progress-{DateTime.Now:yyyyMMdd-HHmmss}.save"), current);
             }
             store.WriteFile(ModdedPath(p), vanilla);
-            SaveManager.Instance.InitProgressData();
-            GD.Print($"[SpireLedger] imported normal progress into modded profile {p} ({Epochs(vanilla)} epochs)");
+            // The active profile is reloaded now; another one is read when the player switches to it.
+            if (p == Profile()) SaveManager.Instance.InitProgressData();
+            GD.Print($"[SpireLedger] imported normal profile {source} into modded profile {p} ({Epochs(vanilla)} epochs)");
             return true;
         }
         catch (Exception ex) { message = ex.Message; GD.PrintErr($"[SpireLedger] progress import failed: {ex.Message}"); return false; }
@@ -126,25 +133,46 @@ internal static class ProgressImport
             _checkedThisSession = true;
             var c = Counts();
             if (c == null || c.Value.Vanilla <= c.Value.Modded || Declined(Profile())) return;
-            ShowOffer(c.Value.Vanilla, c.Value.Modded, fromLedger: false);
+            Open(fromLedger: false);
         }
         catch { _checkedThisSession = true; }
     }
 
     // ===== Dialog =====
 
-    public static void ShowOffer(int vanilla, int modded, bool fromLedger)
+    private static int _source = 1, _target = 1;
+    private static bool _fromLedger;
+
+    // Opens the import dialog with the current profile number as both source and target.
+    public static void Open(bool fromLedger)
     {
-        Build(Loc.T("import_title"), Loc.T("import_body", vanilla, modded), new List<(string, Action)>
+        if (!Modded() || !SaveManager.Instance.IsProfileInitialized) return;
+        _source = _target = Profile();
+        _fromLedger = fromLedger;
+        ShowOffer();
+    }
+
+    private static void ShowOffer()
+    {
+        int v = Unlocks(false, _source), m = Unlocks(true, _target);
+        string Count(int n) => n < 0 ? Loc.T("profile_empty") : Loc.T("unlocks_n", n);
+        var selectors = new List<(string Caption, string Value, Action Prev, Action Next)>
         {
-            (Loc.T("import_yes"), () =>
+            (Loc.T("import_source"), $"{Loc.T("profile_n", _source)} — {Count(v)}",
+                () => { _source = _source == 1 ? 3 : _source - 1; ShowOffer(); }, () => { _source = _source % 3 + 1; ShowOffer(); }),
+            (Loc.T("import_target"), $"{Loc.T("profile_n", _target)}{(_target == Profile() ? " · " + Loc.T("active") : "")} — {Count(m)}",
+                () => { _target = _target == 1 ? 3 : _target - 1; ShowOffer(); }, () => { _target = _target % 3 + 1; ShowOffer(); }),
+        };
+        var buttons = new List<(string, Action)>();
+        if (v >= 0)
+            buttons.Add((Loc.T("import_yes"), () =>
             {
-                if (Import(out var err)) ShowDone();
+                if (Import(_source, _target, out var err)) ShowDone();
                 else Build(Loc.T("import_title"), Loc.T("import_failed", err), new() { (Loc.T("ok"), Close) });
-            }),
-            (Loc.T("import_later"), Close),
-            (fromLedger ? Loc.T("cancel") : Loc.T("import_never"), () => { if (!fromLedger) SetDeclined(Profile()); Close(); }),
-        });
+            }));
+        buttons.Add((Loc.T("import_later"), Close));
+        if (!_fromLedger) buttons.Add((Loc.T("import_never"), () => { SetDeclined(Profile()); Close(); }));
+        Build(Loc.T("import_title"), Loc.T("import_body_short"), buttons, selectors);
     }
 
     private static void ShowDone()
@@ -161,7 +189,8 @@ internal static class ProgressImport
         if (_layer != null) _layer.Visible = false;
     }
 
-    private static void Build(string title, string body, List<(string Label, Action OnClick)> buttons)
+    private static void Build(string title, string body, List<(string Label, Action OnClick)> buttons,
+                              List<(string Caption, string Value, Action Prev, Action Next)>? selectors = null)
     {
         var tree = (SceneTree)Engine.GetMainLoop();
         if (_layer == null)
@@ -183,7 +212,8 @@ internal static class ProgressImport
         _root.AddChild(dim);
         dim.SetSize(vp);
 
-        var size = new Vector2(Math.Min(760f * _s, vp.X - 40f), 330f * _s);
+        int rows = selectors?.Count ?? 0;
+        var size = new Vector2(Math.Min(760f * _s, vp.X - 40f), (330f + rows * 52f) * _s);
         var pos = (vp - size) / 2f;
         var panel = UiTheme.MakePanel(0.97f, _s);
         panel.Position = pos; panel.Size = size;
@@ -192,6 +222,18 @@ internal static class ProgressImport
         float pad = 30f * _s;
         Label(title, 24, UiTheme.Gold, true, pos + new Vector2(pad, pad * 0.8f), size.X - pad * 2f);
         Label(body, 16, UiTheme.Cream, false, pos + new Vector2(pad, pad * 0.8f + 46f * _s), size.X - pad * 2f, wrap: true);
+
+        // Profile pickers: caption, then ◀ value ▶ (arrows cycle profiles 1-3).
+        float sy = pos.Y + 190f * _s;
+        foreach (var (caption, value, prev, next) in selectors ?? new())
+        {
+            Label(caption, 14, new Color(UiTheme.Cream, 0.65f), true, new Vector2(pos.X + pad, sy + 10f * _s), 230f * _s);
+            float ax = pos.X + pad + 240f * _s, aw = 40f * _s, ah = 40f * _s;
+            Arrow("◀", new Vector2(ax, sy), aw, ah, prev);
+            Label(value, 16, UiTheme.Cream, true, new Vector2(ax + aw + 12f * _s, sy + 8f * _s), size.X - pad - (ax - pos.X) - aw * 2f - 24f * _s);
+            Arrow("▶", new Vector2(pos.X + size.X - pad - aw, sy), aw, ah, next);
+            sy += 52f * _s;
+        }
 
         float bw = (size.X - pad * 2f - (buttons.Count - 1) * 14f * _s) / buttons.Count, bh = 50f * _s;
         for (int i = 0; i < buttons.Count; i++)
@@ -216,6 +258,14 @@ internal static class ProgressImport
         l.Position = pos;
         l.Size = new Vector2(width, 0f);
         return l;
+    }
+
+    private static void Arrow(string glyph, Vector2 p, float w, float h, Action onClick)
+    {
+        _root!.AddChild(new ColorRect { Color = new Color(1f, 1f, 1f, 0.08f), Position = p, Size = new Vector2(w, h) });
+        var l = Label(glyph, 18, UiTheme.Gold, true, p + new Vector2(0f, 6f * _s), w);
+        l.HorizontalAlignment = HorizontalAlignment.Center;
+        _hits.Add((new Rect2(p, new Vector2(w, h)), onClick));
     }
 
     private static void HandleMouse()

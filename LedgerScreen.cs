@@ -24,7 +24,9 @@ internal static class LedgerScreen
     private static CanvasLayer? _layer;
     private static Control? _root;
     private static readonly List<(Rect2 Rect, Action OnClick)> _hits = new();
-    private static List<JsonObject> _runs = new();
+    private static List<JsonObject> _all = new();   // every recorded run, newest first
+    private static List<JsonObject> _runs = new();  // _all filtered by the selected teammate
+    private static string? _mate;                   // teammate key (sorted net ids) or null for all runs
     private static int _selected, _page;
     private static bool _mouseWasDown, _escWasDown;
     private static float _s = 1f;
@@ -83,7 +85,9 @@ internal static class LedgerScreen
     {
         try
         {
-            _runs = RunLedger.LoadAll();
+            _all = RunLedger.LoadAll();
+            _mate = null;
+            _runs = _all;
             _selected = 0; _page = 0;
             if (_layer == null)
             {
@@ -106,7 +110,7 @@ internal static class LedgerScreen
     // Called every frame by the mod's Tick.
     public static void Tick()
     {
-        if (!IsOpen || _root == null) return;
+        if (!IsOpen || _root == null || ProgressImport.IsOpen) return; // the import dialog sits on top
         try
         {
             bool esc = Input.IsKeyPressed(Key.Escape);
@@ -153,6 +157,8 @@ internal static class LedgerScreen
         }
 
         float y = pad * 0.7f + 52f * _s;
+        y = Teammates(pad, y, vp.X - pad * 2f) + 14f * _s;
+        if (_mate != null) y = MateComparison(pad, y, vp.X - pad * 2f) + 14f * _s;
         y = Records(pad, y, vp.X - pad * 2f) + 18f * _s;
 
         float listW = (vp.X - pad * 3f) * 0.38f;
@@ -333,8 +339,103 @@ internal static class LedgerScreen
         var list = new List<string>();
         if (run["players"] is JsonArray ps)
             foreach (var p in ps.OfType<JsonObject>())
-                list.Add(((string?)p["character"] ?? "?") + (((bool?)p["is_local"] ?? false) && ps.Count > 1 ? $" ({Loc.T("you")})" : ""));
+            {
+                string character = (string?)p["character"] ?? "?";
+                string? name = (string?)p["name"];
+                string label = ps.Count > 1 && name != null ? $"{name} ({character})" : character;
+                list.Add(label + (((bool?)p["is_local"] ?? false) && ps.Count > 1 ? $" · {Loc.T("you")}" : ""));
+            }
         return list;
+    }
+
+    // ===== Teammates =====
+
+    // The other players of a run, as a stable key (their net ids — Steam ids on Steam — sorted) and a
+    // display name. Solo runs have no key.
+    private static (string Key, string Name)? Mate(JsonObject run)
+    {
+        if (run["players"] is not JsonArray ps || ps.Count < 2) return null;
+        var others = ps.OfType<JsonObject>().Where(p => !((bool?)p["is_local"] ?? false)).ToList();
+        if (others.Count == 0) return null;
+        string key = string.Join("+", others.Select(p => (string?)p["net_id"] ?? "?").OrderBy(x => x));
+        string name = string.Join(" + ", others.Select(p => (string?)p["name"] ?? (string?)p["character"] ?? "?"));
+        return (key, name);
+    }
+
+    // Filter chips: "All (N)" then one chip per teammate, most played first.
+    private static float Teammates(float x, float y, float width)
+    {
+        var mates = _all.Select(Mate).Where(m => m != null).Select(m => m!.Value)
+            .GroupBy(m => m.Key).Select(g => (g.Key, Name: g.Last().Name, Count: g.Count()))
+            .OrderByDescending(m => m.Count).ToList();
+        if (mates.Count == 0) return y - 14f * _s;
+        float cx = x, h = 34f * _s;
+        void Chip(string text, bool active, Action onClick)
+        {
+            float w = (text.Length * 9.5f + 28f) * _s;
+            if (cx + w > x + width) return;
+            var rect = new Rect2(cx, y, w, h);
+            _root!.AddChild(new ColorRect { Color = active ? new Color(UiTheme.Gold, 0.3f) : new Color(1f, 1f, 1f, 0.07f), Position = rect.Position, Size = rect.Size });
+            Text(text, 14, active ? UiTheme.Gold : UiTheme.Cream, bold: true).Position = new Vector2(cx + 14f * _s, y + 7f * _s);
+            _hits.Add((rect, onClick));
+            cx += w + 10f * _s;
+        }
+        Chip(Loc.T("all_runs", _all.Count), _mate == null, () => SetMate(null));
+        foreach (var m in mates)
+        {
+            var key = m.Key;
+            Chip(Loc.T("with_mate", m.Name, m.Count), _mate == key, () => SetMate(key));
+        }
+        return y + h;
+    }
+
+    private static void SetMate(string? key)
+    {
+        _mate = key;
+        _runs = key == null ? _all : _all.Where(r => Mate(r)?.Key == key).ToList();
+        _selected = 0; _page = 0;
+        Rebuild();
+    }
+
+    // You vs the selected teammate over all your runs together: runs, wins, then per-run averages.
+    private static float MateComparison(float x, float y, float width)
+    {
+        int runs = _runs.Count, wins = _runs.Count(r => (bool?)r["result"]?["won"] ?? false);
+        var me = new Tot(); var mate = new Tot();
+        string mateName = "";
+        foreach (var run in _runs)
+        {
+            var t = Totals(run);
+            var ps = (run["players"] as JsonArray)?.OfType<JsonObject>().ToList() ?? new List<JsonObject>();
+            for (int s = 0; s < t.Length && s < ps.Count; s++)
+            {
+                bool local = (bool?)ps[s]["is_local"] ?? false;
+                ref Tot dst = ref local ? ref me : ref mate;
+                dst.Dealt += t[s].Dealt; dst.Effects += t[s].Effects; dst.BlockGiven += t[s].BlockGiven;
+                dst.Taken += t[s].Taken; dst.Healed += t[s].Healed;
+                dst.Biggest = Math.Max(dst.Biggest, t[s].Biggest);
+                if (!local) mateName = (string?)ps[s]["name"] ?? (string?)ps[s]["character"] ?? "?";
+            }
+        }
+        Text(Loc.T("mate_summary", mateName, runs, wins), 16, UiTheme.Gold, bold: true).Position = new Vector2(x, y);
+        string[] caps = { Loc.T("avg_dealt"), Loc.T("avg_effects"), Loc.T("avg_given"), Loc.T("avg_taken"), Loc.T("biggest") };
+        long Avg(long v) => runs > 0 ? (long)Math.Round((double)v / runs) : 0;
+        long[] a = { Avg(me.Dealt), Avg(me.Effects), Avg(me.BlockGiven), Avg(me.Taken), me.Biggest };
+        long[] b = { Avg(mate.Dealt), Avg(mate.Effects), Avg(mate.BlockGiven), Avg(mate.Taken), mate.Biggest };
+        float nameW = width * 0.18f, cellW = (width - nameW) / caps.Length, top = y + 28f * _s;
+        for (int c = 0; c < caps.Length; c++) Text(caps[c], 11, Dim, bold: true).Position = new Vector2(x + nameW + c * cellW, top);
+        void Row(string label, long[] v, long[] other, Color color, float ry)
+        {
+            Text(label, 15, color, bold: true).Position = new Vector2(x, ry);
+            for (int c = 0; c < v.Length; c++)
+            {
+                bool best = c == 3 ? v[c] < other[c] : v[c] > other[c];
+                Text(v[c].ToString(), 15, best ? UiTheme.Gold : UiTheme.Cream, numeric: true).Position = new Vector2(x + nameW + c * cellW, ry);
+            }
+        }
+        Row(Loc.T("you"), a, b, UiTheme.Players[0], top + 18f * _s);
+        Row(mateName, b, a, UiTheme.Players[1], top + 40f * _s);
+        return top + 62f * _s;
     }
 
     private static string Label(List<string> labels, int slot) => slot >= 0 && slot < labels.Count ? labels[slot] : $"P{slot + 1}";
@@ -387,12 +488,7 @@ internal static class LedgerScreen
         _root!.AddChild(panel);
         var l = Text(Loc.T("import_button"), 16, UiTheme.Cream, bold: true);
         l.Position = pos + new Vector2(18f * _s, 14f * _s);
-        var (vanilla, modded) = counts.Value;
-        _hits.Add((new Rect2(pos, size), () =>
-        {
-            if (vanilla > modded) ProgressImport.ShowOffer(vanilla, modded, fromLedger: true);
-            else Text(Loc.T("import_nothing", modded), 14, Dim).Position = pos + new Vector2(0f, -26f * _s);
-        }));
+        _hits.Add((new Rect2(pos, size), () => ProgressImport.Open(fromLedger: true)));
     }
 
     private static void BackButton(float pad, Vector2 vp)

@@ -65,6 +65,7 @@ internal static class RunLedger
             if (File.Exists(path) && JsonNode.Parse(File.ReadAllText(path)) is JsonObject existing)
             {
                 _doc = existing;
+                FillMissingNames(existing);
                 restored = ReadCombats(existing, labels, localSlot);
                 GD.Print($"[SpireLedger] ledger resumed {id} ({restored.Count} combats)");
                 return restored;
@@ -131,6 +132,33 @@ internal static class RunLedger
 
     public static JsonObject? Current => _doc;
 
+    private static MegaCrit.Sts2.Core.Platform.PlatformType? Platform()
+    {
+        try { return RunManager.Instance.NetService.Platform; } catch { return null; }
+    }
+
+    // The player's platform name (Steam persona name in a Steam game), or null if unknown.
+    public static string? PlayerName(ulong netId)
+    {
+        try
+        {
+            var platform = Platform();
+            if (platform == null) return null;
+            string name = MegaCrit.Sts2.Core.Platform.PlatformUtil.GetPlayerNameRaw(platform.Value, netId);
+            return string.IsNullOrWhiteSpace(name) ? null : name;
+        }
+        catch { return null; }
+    }
+
+    // Runs recorded before names were stored get them on the next combat of that run.
+    private static void FillMissingNames(JsonObject doc)
+    {
+        if (doc["players"] is not JsonArray ps) return;
+        foreach (var p in ps.OfType<JsonObject>())
+            if (p["name"] == null && ulong.TryParse((string?)p["net_id"], out var id) && PlayerName(id) is string n)
+                p["name"] = n;
+    }
+
     private static string PathFor(string id)
     {
         var safe = new string(id.Where(c => char.IsLetterOrDigit(c) || c == '_' || c == '-').ToArray());
@@ -163,6 +191,8 @@ internal static class RunLedger
             {
                 ["slot"] = i,
                 ["net_id"] = p.NetId.ToString(),
+                ["name"] = PlayerName(p.NetId),
+                ["platform"] = Platform()?.ToString(),
                 ["character"] = TextHelper.SafeGetText(() => p.Character.Title) ?? "?",
                 ["character_id"] = p.Character.Id.Entry,
                 ["is_local"] = ReferenceEquals(p, me),

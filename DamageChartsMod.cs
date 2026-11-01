@@ -960,6 +960,8 @@ public static partial class DamageChartsMod
         for (int i = 0; i < _players.Count; i++)
         {
             string name = TextHelper.SafeGetText(() => _players[i].Character.Title) ?? $"P{i + 1}";
+            // Co-op: the players' Steam names tell two of the same character apart.
+            if (_players.Count > 1 && RunLedger.PlayerName(_players[i].NetId) is string pn) name = pn;
             bool isMe = ReferenceEquals(_players[i], me);
             if (isMe) localSlot = i;
             labels[i] = isMe && _players.Count > 1 ? $"{name} ({Loc.T("you")})" : name;

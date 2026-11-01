@@ -87,6 +87,13 @@ doesn't reliably reach controls on these layers.
 - `TextHelper.SafeGetText` — resolves the game's `LocString` getters to plain strings and strips rich-text
   tags; used everywhere a game title might be localized or might throw.
 
+## Publishing (read before any release or Workshop upload)
+
+Follow [docs/PUBLISHING.md](docs/PUBLISHING.md): method, checklist and Steam Workshop best practices.
+In short: every publication (push to main, tag, GitHub release, Workshop upload or text/visibility
+change) needs the user's explicit OK **for that version**; this repo is a fork, so `gh` must target
+`MokoGuy/spire-ledger` (`-R`), never upstream; use `scripts/release.ps1` and `scripts/package-workshop.ps1`.
+
 ## Spire Ledger additions
 
 - `CoopAttribution.cs` — CombatHistory hooks (`PowerReceived`, `CardPlayFinished`, `EnergySpent`,
@@ -98,6 +105,11 @@ doesn't reliably reach controls on these layers.
   resolved fight and at game over; re-folded into `RunAggregate` on continue.
 - `LedgerScreen.cs` — Compendium button (a signal-less `Duplicate` of `_statisticsButton`) + full-screen
   history view on its own CanvasLayer, poll-based mouse like the other views.
+- `ProgressImport.cs` — copies a normal profile's progress into a modded profile (source and target
+  picked in a dialog; offered on the main menu when the modded profile has fewer unlocks, also from the
+  Ledger). Writes through the game's `ISaveStore` (local + Steam Cloud, timestamps aligned) after a backup.
+- Co-op names: `RunLedger.PlayerName(netId)` (`PlatformUtil.GetPlayerNameRaw`, Steam persona name);
+  run files store `name` + `net_id` (SteamID64 on Steam), and the Ledger groups runs by teammate.
 - `Loc.cs` — the mod's own strings in French/English following `LocManager.Instance.Language`.
 - Testing: `scripts/dev/sts2.py` (+ `coop-start.sh`) drive the game via a locally patched STS2MCP
   (K:/Projets/sts2-tools/STS2MCP, branch `local-hardening`: no CORS, `STS2MCP_PORT`, console, screenshot,
