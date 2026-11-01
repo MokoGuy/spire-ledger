@@ -14,9 +14,7 @@ out/
 # config (workshop.json, image.png) stays tracked.
 dist/workshop/content/
 
-# Workshop item id — kept local only (private item; not committed to this public repo).
-# Recreate with: echo <itemid> > dist/workshop/mod_id.txt
-dist/workshop/mod_id.txt
+# dist/workshop/mod_id.txt is committed (Spire Ledger's own item) so every upload updates the same item.
 
 # ModUploader CLI binary (downloaded per-machine)
 tools/

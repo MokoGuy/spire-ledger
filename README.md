@@ -150,32 +150,26 @@ on first launch). Restart the game after replacing the DLL — mods load at star
 
 ### Players
 
-Subscribe to **Damage Charts** on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3753047703) and it installs automatically — no manual file
-copying. Enable it in **Settings → Mods** and restart the game.
+Spire Ledger is on the Workshop as a **friends-only** item for now (link added after the first upload).
+Subscribe, enable it in **Settings → Mods** and restart the game. Both co-op players need it.
 
-### Maintainers (publishing)
+### Maintainers (publishing, Windows)
 
 Publishing uses MegaCrit's official [`sts2-mod-uploader`](https://github.com/megacrit/sts2-mod-uploader),
-which talks to Steam directly — so it runs **locally with the Steam client open and logged in**, never
-in CI. The workspace lives in `dist/workshop/` (`workshop.json` + `image.png`); built content is staged
-into `dist/workshop/content/` (git-ignored).
+which talks to Steam directly, so it runs **locally with the Steam client open and logged in**, never in
+CI. The workspace is `dist/workshop/` (`workshop.json` with the bilingual description and `visibility`,
+`image.png` under 1 MB); built content is staged into `dist/workshop/content/` (git-ignored).
 
-```bash
-# One-time: download the uploader (osx-arm64) from the sts2-mod-uploader releases page,
-# place the binary at ./tools/ModUploader (git-ignored), or set $MODUPLOADER.
-
-# On Apple Silicon the downloaded binary is unsigned and macOS will SIGKILL it ("Killed: 9").
-# Ad-hoc sign it once:
-codesign --force --sign - tools/ModUploader
-
-# Build, stage content/, and upload (or print the upload command if the CLI isn't found):
-./scripts/package-workshop.sh
+```powershell
+# One-time: unzip ModUploader-win-x64.zip from the uploader's releases into tools\ModUploader\ (git-ignored).
+# Build, stage content\ and upload (-StageOnly to stop before uploading):
+powershell -ExecutionPolicy Bypass -File scripts\package-workshop.ps1
 ```
 
-First run **creates** the Workshop item with the visibility set in `workshop.json` (starts `private`)
-and writes `dist/workshop/mod_id.txt` — **commit that file** so later runs update the same item.
-After the first publish, subscribe in-client and verify the overlay loads in a run, then flip
-`visibility` to `public` (in `workshop.json` or on the Workshop page) and re-run the script.
+The first upload **creates** the item and writes `dist/workshop/mod_id.txt`: **commit it** so later runs
+update the same item. Before each update, bump `version` in `mod_manifest.json` and `changeNote` in
+`workshop.json`. To go public, set `"visibility": "public"` and re-run (or change it on the Workshop
+page). `scripts/package-workshop.sh` is the macOS equivalent inherited from Damage Charts.
 
 ## Config — `SpireLedger.conf` (next to the DLL in `mods/`)
 
