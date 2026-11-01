@@ -1,0 +1,52 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spire Ledger — animated main image</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* One scene of the animated square main image (?scene=1..5): the name on top, one benefit zoomed in,
+     its caption below. make-gif.sh renders each scene and chains them back to 0_main. */
+  html, body { width: 1080px; height: 1080px; }
+  .title { position: absolute; left: 0; right: 0; top: 52px; text-align: center; }
+  .title h1 {
+    font-size: 104px; font-weight: 700; letter-spacing: 5px; line-height: 1; color: var(--gold);
+    text-shadow: 0 4px 0 #5a3d0c, 0 10px 30px rgba(0,0,0,.7);
+  }
+  .stage { position: absolute; left: 0; right: 0; top: 200px; height: 690px; display: grid; place-items: center; }
+  .stage .crop { position: relative; }
+  .cap-line {
+    position: absolute; left: 60px; right: 60px; top: 920px; text-align: center;
+    font-size: 60px; font-weight: 700; line-height: 1.1; color: var(--cream);
+    text-shadow: 0 4px 16px rgba(0,0,0,.7);
+  }
+  .cap-line b { color: var(--gold); }
+  .s1 { --x: 464; --y: 438; --w: 290; --h: 428; --s: 1.55; }
+  .s2 { --x: 20;  --y: 158; --w: 350; --h: 124; --s: 2.65; }
+  .s3 { --x: 534; --y: 280; --w: 208; --h: 106; --s: 4.4; }
+  .s4 { --x: 88;  --y: 244; --w: 300; --h: 88;  --s: 3.1; }
+  .s5 { --x: 70;  --y: 150; --w: 430; --h: 95;  --s: 2.1; }
+</style>
+</head>
+<body>
+  <div class="title"><h1>SPIRE LEDGER</h1></div>
+  <div class="stage"><div class="crop zoom" id="crop"><img id="img"></div></div>
+  <div class="cap-line" id="cap"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const lang = q.get("lang") === "en" ? "en" : "fr";
+  const scene = Math.min(5, Math.max(1, parseInt(q.get("scene") || "1", 10)));
+  const caps = { 1: "1_cards", 2: "2_party", 3: "3_forecast", 4: "4_recap", 5: "5_ledger" };
+  const T = {
+    fr: { 1: "Vos stats sur <b>chaque carte</b>", 2: "Qui <b>porte l'équipe</b>, en direct", 3: "Chaque <b>PV</b> que vous allez perdre",
+          4: "Les chiffres derrière <b>chaque badge</b>", 5: "Vous contre <b>votre coéquipier</b>" },
+    en: { 1: "Your own stats on <b>every card</b>", 2: "Who <b>carries the party</b>, live", 3: "Every <b>HP</b> you're about to lose",
+          4: "The numbers behind <b>every badge</b>", 5: "You vs <b>your teammate</b>" },
+  }[lang];
+  document.documentElement.lang = lang;
+  document.getElementById("crop").classList.add("s" + scene);
+  document.getElementById("img").src = `../captures/${lang}/${caps[scene]}.png`;
+  document.getElementById("cap").innerHTML = T[scene];
+</script>
+</body>
+</html>

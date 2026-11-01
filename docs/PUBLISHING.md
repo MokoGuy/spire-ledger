@@ -49,7 +49,8 @@ No official MegaCrit publishing guide beyond the uploader README was found (2026
   GitHub release digest; unzip into `tools/ModUploader/` (git-ignored). It reads `steam_appid.txt` and
   `steam_api64.dll` from its own folder, so run it from there with an absolute workspace path
   (`package-workshop.ps1` does).
-- **Workspace** `dist/workshop/`: `workshop.json`, `image.png` (**< 1 MB**, required), optional
+- **Workspace** `dist/workshop/`: `workshop.json`, `image.png` (**< 1 MB**, required; it currently holds an
+  animated GIF under that name, built by `docs/marketing/make-gif.sh`), optional
   `previews/` (each < 1 MB; missing files are removed from the item), `content/` (rebuilt by the script).
 - **content/ = exactly what a manual install has**: `SpireLedger.dll` + `SpireLedger.json` (the
   manifest renamed). No `.pdb`, no personal `SpireLedger.conf`, no test tools.

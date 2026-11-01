@@ -50,7 +50,8 @@ card history from the user's real runs.
 - [x] 0 main (square 1080), 1 card choices, 2 party, 3 forecast, 4 recap, 5 Ledger — FR + EN, all from the latest build
 - [x] User OK on the style (2026-11-01)
 - [x] Max HP line: the console id is `PAPER_CUTS_POWER` (`PAPER_CUTS` silently applied nothing); the forecast shows "−3 max HP" (checked 2026-11-01)
-- [ ] Animated main image? Steam takes GIF previews < 1 MB; ModUploader only sends `image.png` (GIF bytes untested)
+- [x] Animated main image: `make-gif.sh` -> `out/<lang>/0_main.gif` (512 px, ~900 KB); uploaded 2026-11-01 as GIF bytes in
+      `dist/workshop/image.png` (ModUploader only sends that name; the user checks the page, the item is friends-only)
 
 Capture recipe: LEDGER7 seed, Regent host "Kestrel" + Silent client "Moira", Ascension 5; card reward on floor 6
 after the event fight shows a card already in the deck. Replay: `MK_LANG=fra|eng scripts/dev/marketing-run.sh SHOTNAME [over|only] [forecast]`.

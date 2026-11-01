@@ -26,7 +26,7 @@
   The forecast and chart sit above your character by default (`forecast_dock`: above / left / right / below).
 - The mod's own labels follow the game language (French / English).
 
-<img src="docs/screenshots/marketing/0_main.png" width="480" alt="Spire Ledger: co-op stats for Slay the Spire 2">
+<img src="docs/screenshots/marketing/0_main.gif" width="480" alt="Spire Ledger: co-op stats for Slay the Spire 2">
 
 | Card choices with your own stats | Party damage next to each name, live |
 |---|---|
