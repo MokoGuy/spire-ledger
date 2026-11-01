@@ -8,14 +8,14 @@ using MegaCrit.Sts2.Core.Entities.Players;
 namespace SpireLedger;
 
 // Co-op party HUD: each player's damage dealt this fight (and share of the party's), always visible in
-// combat, in one of two places — next to each player's entry in the game's party list (top left), or
-// under each player's character. The party hotkey (config "party_hotkey", default N) cycles
-// list → under characters → hidden; the choice is saved as "party_hud". Solo runs show nothing.
+// combat — above each player's character, next to each player's entry in the game's party list (top
+// left), or both. The party hotkey (config "party_hotkey", default N) cycles
+// above characters → list → both → hidden; the choice is saved as "party_hud". Solo runs show nothing.
 public static partial class DamageChartsMod
 {
-    private enum PartyHudMode { List, Characters, Off }
+    private enum PartyHudMode { Characters, List, Both, Off }
 
-    private static PartyHudMode _partyHud = PartyHudMode.List;
+    private static PartyHudMode _partyHud = PartyHudMode.Characters;
     private static (Key Key, List<Key> Mods, string Spec, bool Down) _partyToggle = (Key.N, new(), "n", false);
 
     private static CanvasLayer? _partyLayer;
@@ -26,6 +26,7 @@ public static partial class DamageChartsMod
     private static long _playerStateLookupFrame = -1000;
     private static Type? _playerStateType;
     private static PropertyInfoCache? _playerStatePlayer;
+    private static System.Reflection.FieldInfo? _playerStateHealthBar, _playerStateTop;
 
     private sealed class PropertyInfoCache
     {
@@ -35,16 +36,18 @@ public static partial class DamageChartsMod
 
     private static string PartyHudSpec(PartyHudMode m) => m switch
     {
-        PartyHudMode.Characters => "characters",
+        PartyHudMode.List => "list",
+        PartyHudMode.Both => "both",
         PartyHudMode.Off => "off",
-        _ => "list",
+        _ => "characters",
     };
 
     private static PartyHudMode ParsePartyHud(string? s) => s switch
     {
-        "characters" => PartyHudMode.Characters,
+        "list" => PartyHudMode.List,
+        "both" => PartyHudMode.Both,
         "off" => PartyHudMode.Off,
-        _ => PartyHudMode.List,
+        _ => PartyHudMode.Characters,
     };
 
     private static void HandlePartyToggle()
@@ -52,9 +55,10 @@ public static partial class DamageChartsMod
         if (!Pressed(ref _partyToggle) || !SafeIsInCombat() || _players.Count < 2) return;
         _partyHud = _partyHud switch
         {
-            PartyHudMode.List => PartyHudMode.Characters,
-            PartyHudMode.Characters => PartyHudMode.Off,
-            _ => PartyHudMode.List,
+            PartyHudMode.Characters => PartyHudMode.List,
+            PartyHudMode.List => PartyHudMode.Both,
+            PartyHudMode.Both => PartyHudMode.Off,
+            _ => PartyHudMode.Characters,
         };
         Toast.Show($"{Loc.T("party_hud_" + PartyHudSpec(_partyHud))}  ({_partyToggle.Spec.ToUpperInvariant()})");
         SaveConfig();
@@ -84,36 +88,46 @@ public static partial class DamageChartsMod
             var vp = _partyLayer.GetViewport().GetVisibleRect().Size;
             float sc = UiTheme.Scale(vp) * _uiScale;
 
+            var places = _partyHud switch
+            {
+                PartyHudMode.List => new[] { false },
+                PartyHudMode.Both => new[] { true, false },
+                _ => new[] { true },
+            };
+            int cell = 0;
             for (int s = 0; s < _players.Count; s++)
             {
-                while (_partyCells.Count <= s)
-                {
-                    var panel = UiTheme.MakePanel(0.82f, 1f);
-                    var label = UiTheme.MakeLabel(14, UiTheme.Cream);
-                    if (GameAssets.Enabled && GameAssets.NumericFont is Font f) label.AddThemeFontOverride("font", f);
-                    _partyLayer.AddChild(panel); _partyLayer.AddChild(label);
-                    _partyCells.Add((panel, label));
-                }
-                var (p, l) = _partyCells[s];
-                Rect2? anchor = _partyHud == PartyHudMode.List ? PartyListRect(_players[s]) : CreatureHitboxRect(_players[s].Creature);
-                if (anchor == null) { p.Visible = l.Visible = false; continue; }
-
                 long dealt = s < snap.PerPlayer.Length ? snap.PerPlayer[s].DealtTotal : 0;
                 int pct = party > 0 ? (int)Math.Round(100.0 * dealt / party) : 0;
-                l.Text = $"⚔ {dealt}  ·  {pct}%";
-                l.AddThemeFontSizeOverride("font_size", Math.Max(9, (int)Math.Round(15 * sc)));
-                l.AddThemeColorOverride("font_color", Palette[Math.Min(s, Palette.Length - 1)]);
-                var size = new Vector2(l.GetMinimumSize().X + 18f * sc, 28f * sc);
-                var r = anchor.Value;
-                // List: to the right of the entry, vertically centered. Characters: centered under the hitbox.
-                var pos = _partyHud == PartyHudMode.List
-                    ? new Vector2(r.End.X + 10f * sc, r.Position.Y + (r.Size.Y - size.Y) / 2f)
-                    : new Vector2(r.Position.X + (r.Size.X - size.X) / 2f, r.End.Y + 6f * sc);
-                p.Visible = l.Visible = true;
-                p.Position = pos; p.Size = size;
-                l.Position = pos + new Vector2(9f * sc, 3f * sc);
+                foreach (bool aboveCharacter in places)
+                {
+                    Rect2? anchor = aboveCharacter ? CreatureHitboxRect(_players[s].Creature) : PartyListRect(_players[s]);
+                    if (anchor == null) continue;
+                    while (_partyCells.Count <= cell)
+                    {
+                        var panel = UiTheme.MakePanel(0.82f, 1f);
+                        var label = UiTheme.MakeLabel(14, UiTheme.Cream);
+                        if (GameAssets.Enabled && GameAssets.NumericFont is Font f) label.AddThemeFontOverride("font", f);
+                        _partyLayer.AddChild(panel); _partyLayer.AddChild(label);
+                        _partyCells.Add((panel, label));
+                    }
+                    var (p, l) = _partyCells[cell++];
+                    l.Text = $"⚔ {dealt}  ·  {pct}%";
+                    l.AddThemeFontSizeOverride("font_size", Math.Max(9, (int)Math.Round(15 * sc)));
+                    l.AddThemeColorOverride("font_color", Palette[Math.Min(s, Palette.Length - 1)]);
+                    var size = new Vector2(l.GetMinimumSize().X + 18f * sc, 28f * sc);
+                    var r = anchor.Value;
+                    // Above the character: centered over the head (under it sit the game's HP bar and effect
+                    // icons). List: right after the entry's health bar, centered on the entry.
+                    var pos = aboveCharacter
+                        ? new Vector2(r.Position.X + (r.Size.X - size.X) / 2f, r.Position.Y - size.Y - 10f * sc)
+                        : new Vector2(r.End.X + 10f * sc, r.Position.Y + (r.Size.Y - size.Y) / 2f);
+                    p.Visible = l.Visible = true;
+                    p.Position = pos; p.Size = size;
+                    l.Position = pos + new Vector2(9f * sc, 3f * sc);
+                }
             }
-            for (int s = _players.Count; s < _partyCells.Count; s++) _partyCells[s].Panel.Visible = _partyCells[s].Label.Visible = false;
+            for (int c = cell; c < _partyCells.Count; c++) _partyCells[c].Panel.Visible = _partyCells[c].Label.Visible = false;
         }
         catch { HidePartyHud(); }
     }
@@ -133,6 +147,21 @@ public static partial class DamageChartsMod
         {
             if (!GodotObject.IsInstanceValid(node) || !node.IsVisibleInTree()) continue;
             if (!ReferenceEquals(_playerStatePlayer?.Prop?.GetValue(node), player)) continue;
+            // The entry's node is much wider than what it draws; its health bar ends where the entry ends.
+            _playerStateHealthBar ??= _playerStateType != null ? AccessTools.Field(_playerStateType, "_healthBar") : null;
+            if (_playerStateHealthBar?.GetValue(node) is Control bar && bar.IsVisibleInTree())
+            {
+                // NHealthBar is wide too; its HpBarContainer is the bar actually drawn.
+                var visible = AccessTools.Property(bar.GetType(), "HpBarContainer")?.GetValue(bar) as Control ?? bar;
+                var b = visible.GetGlobalRect();
+                var n = node.GetGlobalRect();
+                // The name row can run past the bar (status badges after the name): end after both.
+                float right = b.End.X;
+                _playerStateTop ??= _playerStateType != null ? AccessTools.Field(_playerStateType, "_topContainer") : null;
+                if (_playerStateTop?.GetValue(node) is Control top && top.IsVisibleInTree())
+                    right = Math.Max(right, top.GetGlobalRect().Position.X + top.GetCombinedMinimumSize().X * top.GetGlobalTransformWithCanvas().Scale.X);
+                return new Rect2(n.Position.X, n.Position.Y, right - n.Position.X, b.End.Y - n.Position.Y);
+            }
             return node.GetGlobalRect();
         }
         return null;

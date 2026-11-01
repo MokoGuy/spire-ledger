@@ -23,12 +23,16 @@
   past runs it was in your final deck and how many you won (from the game's own run history, so runs
   played without the mod count too), plus plays per run from Spire Ledger's run files.
 - **In-combat toggles**: `V` forecast, `B` damage chart, `N` co-op party damage (next to the player list /
-  under the characters / hidden).
+  above the characters / hidden).
 - The mod's own labels follow the game language (French / English).
 
-| Co-op combat stats | End-of-run recap | Compendium | Ledger |
-|---|---|---|---|
-| ![](docs/screenshots/ui_coop_combat_stats.jpg) | ![](docs/screenshots/ui_gameover_recap.jpg) | ![](docs/screenshots/ui_compendium_button.jpg) | ![](docs/screenshots/ui_ledger_screen.jpg) |
+| Co-op combat: damage above each player | Forecast: HP and max HP about to be lost |
+|---|---|
+| ![](docs/screenshots/1_coop_combat.jpg) | ![](docs/screenshots/2_forecast_max_hp.jpg) |
+| **Card choices: copies in deck, plays, history** | **Ledger: runs with a teammate, you vs them** |
+| ![](docs/screenshots/3_card_choice.jpg) | ![](docs/screenshots/5_ledger_teammate.jpg) |
+| **End-of-run recap with badges** | **One-click progress import** |
+| ![](docs/screenshots/ui_gameover_recap.jpg) | ![](docs/screenshots/4_import_progress.jpg) |
 
 **Install:** subscribe on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895)
 (friends-only for now), or download the zip from Releases (or build it, below), copy `SpireLedger.dll` and
@@ -200,9 +204,9 @@ page). `scripts/package-workshop.sh` is the macOS equivalent inherited from Dama
 
 - `hotkey`: a bare key like `c` (the default) or `f9`, or modifier+key, e.g. `cmd+d`, `shift+d`, `alt+d`, `ctrl+d`.
 - `forecast`: set `false` to hide the incoming-damage forecast. In combat, **`V`** shows/hides it.
-- `party_hud`: co-op only — each player's damage this fight and share of the party, `"list"` (default)
-  next to the player list at the top left, `"characters"` under each character, or `"off"`. In combat,
-  **`N`** (`party_hotkey`) cycles list → characters → off.
+- `party_hud`: co-op only — each player's damage this fight and share of the party, `"characters"` (default)
+  above each character, `"list"` next to the player list at the top left, `"both"`, or `"off"`. In
+  combat, **`N`** (`party_hotkey`) cycles characters → list → both → off.
 - `forecast_hotkey` / `bars_hotkey`: the in-combat toggles for the forecast (default `v`) and the damage
   chart (default `b`); same syntax as `hotkey`. Toggling saves `forecast` / `show_bars`.
 - `forecast_anchor`: `"player"` (default) docks the forecast beside your character; dragging it switches

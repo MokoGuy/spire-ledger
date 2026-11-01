@@ -200,15 +200,20 @@ internal static class CardInsight
             if (screen is not Control sc || !sc.IsVisibleInTree()) continue;
             foreach (var holder in Find(screen, t => _cardHolder != null && _cardHolder.IsAssignableFrom(t)))
                 if (holder is Control hc && hc.IsVisibleInTree() && _holderModel?.GetValue(holder) is CardModel m)
-                    _cards.Add((hc, m, false));
+                    _cards.Add((CardFrame(hc), m, false));
         }
         foreach (var slot in Find(root, t => t == _merchantCard))
         {
             if (slot is not Control sl || !sl.IsVisibleInTree()) continue;
             if (_merchantCardNode?.GetValue(slot) is Control cardNode && cardNode.IsVisibleInTree() && _ncardModel?.GetValue(cardNode) is CardModel m)
-                _cards.Add((cardNode, m, true));
+                _cards.Add((CardFrame(cardNode), m, true));
         }
     }
+
+    // The card's visible frame (the NCard's "Frame" texture) — the holder's own rect is a small box at the
+    // card's center, which put the info over the card text.
+    private static Control CardFrame(Control holderOrCard)
+        => holderOrCard.FindChild("Frame", true, false) as Control ?? holderOrCard;
 
     private static IEnumerable<Node> Find(Node node, Func<Type, bool> match)
     {
