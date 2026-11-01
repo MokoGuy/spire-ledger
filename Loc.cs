@@ -100,7 +100,6 @@ internal static class Loc
         ["bars_off"] = ("Damage chart hidden", "Graphique des dégâts masqué"),
         ["party_hud_list"] = ("Party damage: next to the player list", "Dégâts de l'équipe : à côté de la liste des joueurs"),
         ["party_hud_characters"] = ("Party damage: above the characters", "Dégâts de l'équipe : au-dessus des personnages"),
-        ["party_hud_both"] = ("Party damage: above the characters and next to the list", "Dégâts de l'équipe : au-dessus des personnages et à côté de la liste"),
         ["party_hud_off"] = ("Party damage hidden", "Dégâts de l'équipe masqués"),
         ["ci_not_in_deck"] = ("Not in your deck", "Pas dans votre deck"),
         ["ci_in_deck"] = ("In your deck: {0}", "Dans votre deck : {0}"),

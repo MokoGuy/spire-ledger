@@ -22,11 +22,11 @@
   in your deck (and upgraded), how often you played it this run, and its history — in how many of your
   past runs it was in your final deck and how many you won (from the game's own run history, so runs
   played without the mod count too), plus plays per run from Spire Ledger's run files.
-- **In-combat toggles**: `V` forecast, `B` damage chart, `N` co-op party damage (next to the player list /
-  above the characters / hidden).
+- **In-combat toggles**: `V` forecast, `B` damage chart, `N` co-op party damage (next to the player list,
+  above the characters, or hidden).
 - The mod's own labels follow the game language (French / English).
 
-| Co-op combat: damage above each player | Forecast: HP and max HP about to be lost |
+| Co-op combat: damage next to each player, forecast | Forecast: HP and max HP about to be lost |
 |---|---|
 | ![](docs/screenshots/1_coop_combat.jpg) | ![](docs/screenshots/2_forecast_max_hp.jpg) |
 | **Card choices: copies in deck, plays, history** | **Ledger: runs with a teammate, you vs them** |
@@ -204,9 +204,9 @@ page). `scripts/package-workshop.sh` is the macOS equivalent inherited from Dama
 
 - `hotkey`: a bare key like `c` (the default) or `f9`, or modifier+key, e.g. `cmd+d`, `shift+d`, `alt+d`, `ctrl+d`.
 - `forecast`: set `false` to hide the incoming-damage forecast. In combat, **`V`** shows/hides it.
-- `party_hud`: co-op only — each player's damage this fight and share of the party, `"characters"` (default)
-  above each character, `"list"` next to the player list at the top left, `"both"`, or `"off"`. In
-  combat, **`N`** (`party_hotkey`) cycles characters → list → both → off.
+- `party_hud`: co-op only — each player's damage this fight and share of the party, `"list"` (default)
+  next to each player in the party list at the top left, `"characters"` above each character, or `"off"`.
+  In combat, **`N`** (`party_hotkey`) cycles list → characters → off.
 - `forecast_hotkey` / `bars_hotkey`: the in-combat toggles for the forecast (default `v`) and the damage
   chart (default `b`); same syntax as `hotkey`. Toggling saves `forecast` / `show_bars`.
 - `forecast_anchor`: `"player"` (default) docks the forecast beside your character; dragging it switches

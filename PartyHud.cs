@@ -8,14 +8,14 @@ using MegaCrit.Sts2.Core.Entities.Players;
 namespace SpireLedger;
 
 // Co-op party HUD: each player's damage dealt this fight (and share of the party's), always visible in
-// combat — above each player's character, next to each player's entry in the game's party list (top
-// left), or both. The party hotkey (config "party_hotkey", default N) cycles
-// above characters → list → both → hidden; the choice is saved as "party_hud". Solo runs show nothing.
+// combat — next to each player's entry in the game's party list (top left, the default) or above each
+// player's character. The party hotkey (config "party_hotkey", default N) cycles list → above
+// characters → hidden; the choice is saved as "party_hud". Solo runs show nothing.
 public static partial class DamageChartsMod
 {
-    private enum PartyHudMode { Characters, List, Both, Off }
+    private enum PartyHudMode { List, Characters, Off }
 
-    private static PartyHudMode _partyHud = PartyHudMode.Characters;
+    private static PartyHudMode _partyHud = PartyHudMode.List;
     private static (Key Key, List<Key> Mods, string Spec, bool Down) _partyToggle = (Key.N, new(), "n", false);
 
     private static CanvasLayer? _partyLayer;
@@ -36,18 +36,16 @@ public static partial class DamageChartsMod
 
     private static string PartyHudSpec(PartyHudMode m) => m switch
     {
-        PartyHudMode.List => "list",
-        PartyHudMode.Both => "both",
+        PartyHudMode.Characters => "characters",
         PartyHudMode.Off => "off",
-        _ => "characters",
+        _ => "list",
     };
 
     private static PartyHudMode ParsePartyHud(string? s) => s switch
     {
-        "list" => PartyHudMode.List,
-        "both" => PartyHudMode.Both,
+        "characters" => PartyHudMode.Characters,
         "off" => PartyHudMode.Off,
-        _ => PartyHudMode.Characters,
+        _ => PartyHudMode.List,
     };
 
     private static void HandlePartyToggle()
@@ -55,10 +53,9 @@ public static partial class DamageChartsMod
         if (!Pressed(ref _partyToggle) || !SafeIsInCombat() || _players.Count < 2) return;
         _partyHud = _partyHud switch
         {
-            PartyHudMode.Characters => PartyHudMode.List,
-            PartyHudMode.List => PartyHudMode.Both,
-            PartyHudMode.Both => PartyHudMode.Off,
-            _ => PartyHudMode.Characters,
+            PartyHudMode.List => PartyHudMode.Characters,
+            PartyHudMode.Characters => PartyHudMode.Off,
+            _ => PartyHudMode.List,
         };
         Toast.Show($"{Loc.T("party_hud_" + PartyHudSpec(_partyHud))}  ({_partyToggle.Spec.ToUpperInvariant()})");
         SaveConfig();
@@ -88,12 +85,7 @@ public static partial class DamageChartsMod
             var vp = _partyLayer.GetViewport().GetVisibleRect().Size;
             float sc = UiTheme.Scale(vp) * _uiScale;
 
-            var places = _partyHud switch
-            {
-                PartyHudMode.List => new[] { false },
-                PartyHudMode.Both => new[] { true, false },
-                _ => new[] { true },
-            };
+            var places = _partyHud == PartyHudMode.Characters ? new[] { true } : new[] { false };
             int cell = 0;
             for (int s = 0; s < _players.Count; s++)
             {
