@@ -17,6 +17,26 @@ public class DamageForecastTests
     private static ForecastResult RunOsty(int hp, int block, int ostyAbsorb, params ForecastItem[] items) =>
         DamageForecast.Compute(new ForecastInputs(hp, 50, block, ostyAbsorb, false, new List<ForecastItem>(items)));
 
+    // Disintegration-style debuff: the owner takes N blockable damage at the end of their turn.
+    private static ForecastItem BlockableDot(int amount) =>
+        new("Disintegration", ForecastKind.Dot, 1, amount, blockable: true, conditional: false);
+
+    [Fact]
+    public void BlockableDot_NoBlock_CountsAsLoss()
+    {
+        // Reported in game: 54 HP, Disintegration 6, no enemy attack -> showed "Safe", lost 6.
+        var r = Run(54, 54, 0, false, BlockableDot(6));
+        Assert.Equal(6, r.MinLoss);
+        Assert.False(r.IsSafe);
+    }
+
+    [Fact]
+    public void BlockableDot_IsStoppedByBlock()
+    {
+        var r = Run(54, 54, 4, false, BlockableDot(6));
+        Assert.Equal(2, r.MinLoss);
+    }
+
     [Fact]
     public void SingleAttackNoBlock_LossEqualsDamage()
     {

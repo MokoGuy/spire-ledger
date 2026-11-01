@@ -361,7 +361,15 @@ internal static class ForecastReader
         return 0;
     }
 
-    private static readonly string[] DotKeywords = { "Bleed", "Burn", "Poison", "Regret", "Bomb", "Constrict" };
+    // Player debuffs that make their owner lose HP on their own, and whether Block stops it. Checked
+    // against the game's power code (v0.107.1): Constrict / MagicBomb / Disintegration deal Unpowered
+    // damage (blockable) at turn end; Demise and Poison are Unblockable. Bleed / Burn / Regret are kept
+    // from the original keyword list (not powers in this version; harmless if they never match).
+    private static readonly (string Keyword, bool Blockable)[] Dots =
+    {
+        ("Poison", false), ("Demise", false), ("Bleed", false), ("Burn", false), ("Regret", false),
+        ("Constrict", true), ("Bomb", true), ("Disintegration", true),
+    };
 
     // Player powers that tick HP loss this turn regardless of action. Damage magnitude is the power's
     // stack/amount for stacking DoTs (Bleed/Poison); best-effort for others. Bypass block.
@@ -375,11 +383,13 @@ internal static class ForecastReader
                 if (p == null) continue;
                 string tn = p.GetType().Name;
                 string id = GetString(p, "Id", "PowerId") ?? tn;
-                if (!MatchesAny(tn, DotKeywords) && !MatchesAny(id, DotKeywords)) continue;
+                int dot = Array.FindIndex(Dots, d => tn.Contains(d.Keyword, StringComparison.OrdinalIgnoreCase)
+                                                     || id.Contains(d.Keyword, StringComparison.OrdinalIgnoreCase));
+                if (dot < 0) continue;
                 int amount = GetInt(p, "Amount", "Stacks", "Count", "Value");
                 if (amount <= 0) continue;
                 string label = TextHelper.SafeGetText(() => GetProp(p, "Title")) ?? Prettify(tn);
-                items.Add(new ForecastItem(label, ForecastKind.Dot, 1, amount, blockable: false, conditional: false));
+                items.Add(new ForecastItem(label, ForecastKind.Dot, 1, amount, blockable: Dots[dot].Blockable, conditional: false));
             }
         }
         catch { }
