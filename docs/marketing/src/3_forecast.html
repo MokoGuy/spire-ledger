@@ -10,6 +10,11 @@
   .panel { left: 80px; top: 600px; width: 614px; }
   .brand { left: 82px; right: auto; }
   .shot .num { position: absolute; }
+  /* The EN capture holds a different hand: Ascender's Bane, then the Burns at the right edge. */
+  .en-only { display: none; }
+  html[lang=en] .en-only { display: block; }
+  html[lang=en] .r2 { left: 206px !important; top: 576px !important; width: 168px !important; height: 160px !important; }
+  html[lang=en] .n2 { left: 160px !important; top: 640px !important; }
 </style>
 </head>
 <body>
@@ -30,8 +35,9 @@
     <div class="ring" style="left:102px; top:90px; width:176px; height:96px"></div>
     <div class="ring" style="left:684px; top:272px; width:84px; height:72px"></div>
     <span class="num" style="left:780px; top:286px">1</span>
-    <div class="ring" style="left:196px; top:630px; width:504px; height:110px"></div>
-    <span class="num" style="left:150px; top:660px">2</span>
+    <div class="ring r2" style="left:196px; top:630px; width:504px; height:110px"></div>
+    <span class="num n2" style="left:150px; top:660px">2</span>
+    <div class="ring en-only" style="left:668px; top:600px; width:212px; height:136px"></div>
   </div>
 
   <div class="brand">SPIRE LEDGER</div>

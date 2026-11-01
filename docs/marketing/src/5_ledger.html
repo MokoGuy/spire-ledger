@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spire Ledger — the Ledger</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .mate { left: 104px; top: 262px; --x: 70; --y: 100; --w: 1600; --h: 158; --s: 1.05; }
+  .runs { left: 104px; top: 470px; --x: 70; --y: 370; --w: 1800; --h: 290; --s: 0.95; }
+  .tag { position: absolute; }
+  .cols { position: absolute; left: 80px; right: 80px; top: 790px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .cols .panel { position: static; padding: 24px 26px; }
+  .cols .points li { font-size: 28px; margin: 0; }
+</style>
+</head>
+<body>
+  <div class="head"><h1 data-t="h1"></h1><p data-t="sub"></p></div>
+
+  <div class="crop zoom mate"><img class="cap"></div>
+  <div class="crop runs"><img class="cap"></div>
+  <span class="num tag" style="left:84px; top:242px">1</span>
+  <span class="num tag" style="left:84px; top:450px">2</span>
+  <span class="num tag" style="left:738px; top:450px">3</span>
+
+  <div class="cols">
+    <div class="panel"><ul class="points"><li><span class="num">1</span><span data-t="p1"></span></li></ul></div>
+    <div class="panel"><ul class="points"><li><span class="num">2</span><span data-t="p2"></span></li></ul></div>
+    <div class="panel"><ul class="points"><li><span class="num">3</span><span data-t="p3"></span></li></ul></div>
+  </div>
+
+  <div class="brand">SPIRE LEDGER</div>
+
+<script>
+  const lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "fr";
+  const T = {
+    fr: {
+      h1: "Vous contre votre coéquipier",
+      sub: "Dans le Compendium, le Registre garde chacune de vos parties.",
+      p1: "<b>Vous face à chaque coéquipier</b> : moyennes par partie, le meilleur en or",
+      p2: "<b>Toutes vos parties</b>, regroupées par coéquipier",
+      p3: "<b>Chaque partie en détail</b> : stats, badges et dégâts combat par combat",
+    },
+    en: {
+      h1: "You vs your teammate",
+      sub: "In the Compendium, the Ledger keeps every run you play.",
+      p1: "<b>You vs each teammate</b>: per-run averages, the better one in gold",
+      p2: "<b>All your runs</b>, grouped by teammate",
+      p3: "<b>Every run in detail</b>: stats, badges and damage fight by fight",
+    },
+  }[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach(e => e.innerHTML = T[e.dataset.t]);
+  document.querySelectorAll("img.cap").forEach(i => i.src = `../captures/${lang}/5_ledger.png`);
+</script>
+</body>
+</html>

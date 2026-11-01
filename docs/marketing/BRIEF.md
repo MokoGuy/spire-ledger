@@ -47,12 +47,12 @@ card history from the user's real runs.
 - [x] Tooling: player names, language, history demo, `sts2.py autoplay` (works in co-op on both ports)
 - [x] Pipeline: `src/<n>.html?lang=fr|en` + `src/style.css` (Kreon, game palette) → `render.sh NAME [fr|en|all] [WxH]`
       (headless Edge) → `out/<lang>/<n>.png`; raw game captures in `captures/<lang>/`
-- [x] 0 main (square 1080, FR + EN), 1 card choices (FR + EN), 2 party (FR + EN), 3 forecast (FR), 4 recap (FR; EN
-      capture predates the "Badges:" fix)
-- [ ] User review of the drafts
-- [ ] Redo: 2 party FR (old "HP" label), 3 forecast EN, 4 recap EN, 5 Ledger (FR + EN, test runs only)
+- [x] 0 main (square 1080), 1 card choices, 2 party, 3 forecast, 4 recap, 5 Ledger — FR + EN, all from the latest build
+- [x] User OK on the style (2026-11-01)
 - [ ] Max HP line in the forecast capture (console `power PAPER_CUTS` did not show it; untested why)
 - [ ] Animated main image? Steam takes GIF previews < 1 MB; ModUploader only sends `image.png` (GIF bytes untested)
 
 Capture recipe: LEDGER7 seed, Regent host "Kestrel" + Silent client "Moira", Ascension 5; card reward on floor 6
-after the event fight shows a card already in the deck. Replay: `scripts/dev/marketing-run.sh SHOTNAME [over] [forecast]`.
+after the event fight shows a card already in the deck. Replay: `MK_LANG=fra|eng scripts/dev/marketing-run.sh SHOTNAME [over|only] [forecast]`.
+Ledger (5): with only the LEDGER7 host files (`*_1.json`) of one language in `SpireLedger/runs` (the user's real
+run set aside and restored), one `launch-local`, Compendium → Registre/Ledger → the Moira chip → a finished run.
