@@ -1,0 +1,7 @@
+# Keep LF everywhere (matches upstream, which is developed on macOS) so Windows checkouts with
+# core.autocrlf=true don't convert line endings or warn on every add.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.dll binary
