@@ -12,6 +12,7 @@
   <!-- Compile the pure calculator directly (it has no Godot/game refs), so tests need no game DLLs. -->
   <ItemGroup>
     <Compile Include="../DamageForecast.cs" Link="DamageForecast.cs" />
+    <Compile Include="../ShareSplit.cs" Link="ShareSplit.cs" />
   </ItemGroup>
 
   <ItemGroup>
