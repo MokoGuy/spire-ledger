@@ -1,9 +1,37 @@
 # Spire Ledger — Slay the Spire 2 mod
 
 > Fork of [brian-gates/sts2-damage-charts](https://github.com/brian-gates/sts2-damage-charts) (MIT) focused on
-> co-op: correct per-player attribution in multiplayer, per-run stats history saved locally (game mode,
-> badges), a detailed end-of-run recap and a local HTML history page. Work in progress — the sections
-> below still describe the upstream Damage Charts mod.
+> co-op. The sections after "Upstream Damage Charts" describe the features inherited from it.
+
+**What Spire Ledger adds**
+
+- **Fair co-op attribution.** Damage with no direct dealer (Poison, Doom, …) is credited to the players
+  who applied that power, split by the stacks each applied, instead of to whoever's PC is counting. Both
+  PCs record identical numbers ([evidence](docs/testing/)).
+- **More per-player stats**, per fight and per run: effects applied, block given to allies, cards played,
+  energy spent, damage per energy, biggest hit (plus the existing dealt / taken / block / heal / potions).
+- **Party table** in the combat stats (hotkey `C`) and in the run recap: one row per player, the best
+  value of each column in gold.
+- **End-of-run recap** opens on the game-over screen with the badges each player got.
+- **Run history** — one JSON file per run in `%APPDATA%\SlayTheSpire2\SpireLedger\runs` (seed, mode,
+  Ascension, modifiers, players, every fight, result, badges, the game's own counters), kept across
+  save & continue.
+- **Ledger screen** — a "Registre" / "Ledger" button in the Compendium next to Statistics: records,
+  your runs, and each run's party totals, badges and fights.
+- The mod's own labels follow the game language (French / English).
+
+| Co-op combat stats | End-of-run recap | Compendium | Ledger |
+|---|---|---|---|
+| ![](docs/screenshots/ui_coop_combat_stats.jpg) | ![](docs/screenshots/ui_gameover_recap.jpg) | ![](docs/screenshots/ui_compendium_button.jpg) | ![](docs/screenshots/ui_ledger_screen.jpg) |
+
+**Install:** download the zip from Releases (or build it, below), copy `SpireLedger.dll` and
+`SpireLedger.json` into the game's `mods` folder, start the game and accept loading mods. Both co-op
+players need the same version.
+
+**Developing:** `scripts/dev/sts2.py` drives the game for tests through a locally patched
+[STS2MCP](https://github.com/Gennadiyev/STS2MCP) (seeded custom runs, Steam-less local instances, a 2-player
+FastMP co-op on one PC via `scripts/dev/coop-start.sh`, an auto-fight loop, screenshots).
+`scripts/release.ps1 -Version x.y.z [-Publish]` builds, tests and packages a release.
 
 ### Keep your unlocks when playing modded (Windows)
 
@@ -19,6 +47,8 @@ Then launch the game with mods right away. Options: `-Profile 2` for another sav
 if several Steam accounts played on this PC. The run history is not copied: the game's Steam Cloud sync
 deletes modded history runs that aren't in the cloud.
 
+
+## Upstream Damage Charts
 
 A standalone damage analytics and incoming-damage forecast mod for [Slay the Spire 2](https://store.steampowered.com/app/2868840/).
 

@@ -87,6 +87,24 @@ doesn't reliably reach controls on these layers.
 - `TextHelper.SafeGetText` — resolves the game's `LocString` getters to plain strings and strips rich-text
   tags; used everywhere a game title might be localized or might throw.
 
+## Spire Ledger additions
+
+- `CoopAttribution.cs` — CombatHistory hooks (`PowerReceived`, `CardPlayFinished`, `EnergySpent`,
+  `BlockGained`): per-(target, power) stacks applied by each player, used to split no-dealer damage
+  (Poison/Doom) via `ShareSplit` (pure, unit-tested); effects/cards/energy/block-given stats; the
+  `ScoreUtility.GetBadges` postfix that records every player's badges at game over and opens the recap.
+- `RunLedger.cs` — one JSON per run under `OS.GetUserDataDir()/SpireLedger/runs` (outside `steam/`, which
+  the game's cloud sync prunes). Id = `<RunManager._startTime>_<seed>_<local NetId>`. Written after each
+  resolved fight and at game over; re-folded into `RunAggregate` on continue.
+- `LedgerScreen.cs` — Compendium button (a signal-less `Duplicate` of `_statisticsButton`) + full-screen
+  history view on its own CanvasLayer, poll-based mouse like the other views.
+- `Loc.cs` — the mod's own strings in French/English following `LocManager.Instance.Language`.
+- Testing: `scripts/dev/sts2.py` (+ `coop-start.sh`) drive the game via a locally patched STS2MCP
+  (K:/Projets/sts2-tools/STS2MCP, branch `local-hardening`: no CORS, `STS2MCP_PORT`, console, screenshot,
+  custom_embark, key, click_node). Steam-less instances: `--force-steam off` (saves under
+  `%APPDATA%/SlayTheSpire2/default`), co-op on one PC with `--fastmp host_custom` / `--fastmp join`.
+  Never leave STS2_MCP.dll in `mods/` after a test session (`sts2.py uninstall`).
+
 ## Conventions & gotchas
 
 - **The overlay must never break combat.** Capture hooks and `OnHpChanged` are wrapped in `try/catch` that
