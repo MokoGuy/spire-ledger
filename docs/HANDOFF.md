@@ -4,9 +4,11 @@ Read with `CLAUDE.md` (architecture, testing) and `docs/PUBLISHING.md` (release 
 
 ## Where things stand
 
-- **Published:** v0.4.0 on GitHub (release + tag) and the Steam Workshop (item 3831558895, still
-  friends-only), with the new images: animated square main image (GIF bytes in `dist/workshop/image.png`,
-  confirmed animating) and 5 English previews. The user's `mods/` has v0.4.0 + STS2MCP (may stay).
+- **Published:** v0.5.0 on GitHub (release + tag) and the Steam Workshop (item 3831558895, still
+  friends-only): Ledger "Builds" tab (win rates per character/relic/card from the game's `.run` history,
+  favorite/lucky/cursed highlights, game art) and each run's final deck/relics. Images unchanged since
+  v0.4.0 (animated GIF main image, 5 English previews; no Builds preview yet). The user's `mods/` has the
+  v0.5.0 build + STS2MCP (may stay).
 - **Marketing images done:** `docs/marketing/` (BRIEF.md, HTML sources, captures FR + EN, `render.sh`,
   `make-gif.sh`); README gallery uses `docs/screenshots/marketing/`.
 - Everything is committed and pushed.
@@ -34,5 +36,8 @@ Read with `CLAUDE.md` (architecture, testing) and `docs/PUBLISHING.md` (release 
 - Workshop visibility is still `friends_only`: going `unlisted`/`public` is the user's call (after a
   friend has tested the Workshop install on another PC).
 - Card history under card choices not verifiable on Steam-less instances without the history hook.
-- Build tracking: done after v0.4.0 (Ledger "Builds" tab + final relics/deck in the run detail), not released yet.
+- The Ledger's hover names on icons (`UpdateTip`) were not seen in a screenshot: STS2MCP's `mouse_click`
+  warps the OS cursor in window pixels (4K) but sends the event in viewport pixels (1080p), so a test can't
+  hover. Check by hand.
+- Possible next: a Builds preview image for the Workshop/README (marketing pipeline).
 - Forecast in co-op: not a limitation. Every monster attack hits all players (`AttackCommand.FromMonster` → `TargetingAllOpponents`, no monster narrows it), and the intent number is computed against the local creature (`AttackIntent.GetSingleDamage` uses `LocalContext.GetMe`), so the local Vulnerable/Weak/etc. are already in it.
