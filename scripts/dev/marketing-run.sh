@@ -25,7 +25,7 @@ for i in 1 0; do for P in 15527 15528; do STS2MCP_PORT=$P $D act choose_event_op
 if [ "${3:-}" = forecast ]; then
   both fight 1; sleep 10; H shot "$1_party" >/dev/null
   H console "card BURN" >/dev/null; H console "card BURN" >/dev/null
-  for i in 2 3 4 5; do H console "power PAPER_CUTS 2 $i" >/dev/null; done
+  for i in 2 3 4 5; do H console "power PAPER_CUTS_POWER 2 $i" >/dev/null; done
   sleep 3; H shot "$1_forecast"
   [ "${2:-}" = only ] && exit 0
 fi

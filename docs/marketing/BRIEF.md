@@ -49,7 +49,7 @@ card history from the user's real runs.
       (headless Edge) → `out/<lang>/<n>.png`; raw game captures in `captures/<lang>/`
 - [x] 0 main (square 1080), 1 card choices, 2 party, 3 forecast, 4 recap, 5 Ledger — FR + EN, all from the latest build
 - [x] User OK on the style (2026-11-01)
-- [ ] Max HP line in the forecast capture (console `power PAPER_CUTS` did not show it; untested why)
+- [x] Max HP line: the console id is `PAPER_CUTS_POWER` (`PAPER_CUTS` silently applied nothing); the forecast shows "−3 max HP" (checked 2026-11-01)
 - [ ] Animated main image? Steam takes GIF previews < 1 MB; ModUploader only sends `image.png` (GIF bytes untested)
 
 Capture recipe: LEDGER7 seed, Regent host "Kestrel" + Silent client "Moira", Ascension 5; card reward on floor 6
