@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // Loads the GAME'S OWN art (fonts, textures, atlas sprites, shaders, scenes) from its res:// pack at
 // runtime so the overlay can look native. Nothing is copied into this repo. Every helper is static,
@@ -202,7 +202,7 @@ internal static class GameAssets
                 else
                 {
                     _missAt[resPath] = now;
-                    if (_logged.Add(resPath)) GD.Print($"[STS2 Damage] game asset unavailable, using fallback: {resPath}");
+                    if (_logged.Add(resPath)) GD.Print($"[SpireLedger] game asset unavailable, using fallback: {resPath}");
                 }
                 return res;
             }

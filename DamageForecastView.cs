@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // Always-on, draggable incoming-damage readout: predicted HP loss this turn (a range when uncertain), the
 // HP you'd be left at and a preview HP bar of the loss. Docked beside the player; Block /
@@ -265,7 +265,7 @@ internal sealed class DamageForecastView
             Material? pulse = r.IsLethal ? ForecastStyle.PulseMaterial() : null;
             if (_bg.Material != pulse) _bg.Material = pulse;
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] forecast render error: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] forecast render error: {ex.Message}"); }
     }
 
     private void LayoutHpBar(ForecastResult r, float padX, float sc, string afterHex)

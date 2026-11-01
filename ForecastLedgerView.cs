@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Godot;
 using HarmonyLib;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // On-demand hover panel for the always-on threat. Top: an "HP lost / round" timeline — one bar per
 // recent round (frozen actuals) plus the current round as a live bar (potential → net → range), the
@@ -196,7 +196,7 @@ internal sealed class ForecastLedgerView
             for (int i = rect; i < _rects.Count; i++) _rects[i].Visible = false;
             for (int i = icon; i < _icons.Count; i++) _icons[i].Visible = false;
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] forecast ledger error: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] forecast ledger error: {ex.Message}"); }
     }
 
     // Recent completed rounds (actual taken) + the live current round (forecast potential/net/range).

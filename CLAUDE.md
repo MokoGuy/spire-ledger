@@ -20,9 +20,9 @@ the `.csproj` derives the platform-specific `data_*` subdir that actually holds 
 ```bash
 # macOS
 GAME_DIR="$HOME/Library/Application Support/Steam/steamapps/common/Slay the Spire 2"
-dotnet build STS2_DamageCharts.csproj -c Release -o out -p:STS2GameDir="$GAME_DIR"
-cp out/STS2_DamageCharts.dll "$GAME_DIR/SlayTheSpire2.app/Contents/MacOS/mods/"
-cp mod_manifest.json "$GAME_DIR/SlayTheSpire2.app/Contents/MacOS/mods/STS2_DamageCharts.json"
+dotnet build SpireLedger.csproj -c Release -o out -p:STS2GameDir="$GAME_DIR"
+cp out/SpireLedger.dll "$GAME_DIR/SlayTheSpire2.app/Contents/MacOS/mods/"
+cp mod_manifest.json "$GAME_DIR/SlayTheSpire2.app/Contents/MacOS/mods/SpireLedger.json"
 ```
 
 On Windows/Linux the `mods/` dir is directly under `$GAME_DIR`. See README.md for those paths.
@@ -32,9 +32,9 @@ For Steam Workshop publishing, `scripts/package-workshop.sh` builds Release, sta
 Steam client logged in — never CI. See the "Steam Workshop" section of README.md.
 
 **Requires the .NET 9 SDK.** Unit tests cover the forecast calculator (`tests/`, `dotnet test
-tests/STS2_DamageCharts.Tests.csproj -p:STS2GameDir=...`); everything else is verified manually: rebuild,
+tests/SpireLedger.Tests.csproj -p:STS2GameDir=...`); everything else is verified manually: rebuild,
 copy the DLL into `mods/`, **restart the game** (mods load at startup), and watch in-game. Never overwrite
-the DLL in place while the game runs (it is memory-mapped); stage it and `mv` it into place. `GD.Print("[STS2 Damage] ...")`
+the DLL in place while the game runs (it is memory-mapped); stage it and `mv` it into place. `GD.Print("[SpireLedger] ...")`
 lines go to the Godot console/log; the mod self-disables after 5 consecutive per-frame exceptions.
 
 ## Architecture
@@ -95,6 +95,6 @@ doesn't reliably reach controls on these layers.
   references where avoidable — so the game can rename/move things without a hard crash. New "is a menu open?"
   checks go through `ResolveBlockers` + the `InstanceBool`/`InstanceMemberNotNull` helpers.
 - The overlay hides itself when a game menu/modal/overlay is on top (`IsBlockingUiOpen`/`IsMenuOpen`/`IsMapOpen`).
-- Config lives in `STS2_DamageCharts.conf` next to the DLL in `mods/` (auto-created on first run). Chart
+- Config lives in `SpireLedger.conf` next to the DLL in `mods/` (auto-created on first run). Chart
   position and settings are written back by `SaveConfig` when the chart is dragged.
 - Multiplayer: per-player slots throughout; the local player is found via `LocalContext.GetMe(runState)`.

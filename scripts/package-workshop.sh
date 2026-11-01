@@ -18,13 +18,13 @@ WORKSPACE="dist/workshop"
 CONTENT="$WORKSPACE/content"
 
 echo "==> Building Release (STS2GameDir=$GAME_DIR)"
-dotnet build STS2_DamageCharts.csproj -c Release -o out -p:STS2GameDir="$GAME_DIR"
+dotnet build SpireLedger.csproj -c Release -o out -p:STS2GameDir="$GAME_DIR"
 
 echo "==> Staging $CONTENT"
 mkdir -p "$CONTENT"
 # Exactly what subscribers receive: the built DLL + the manifest, renamed to match the manual install.
-cp out/STS2_DamageCharts.dll "$CONTENT/STS2_DamageCharts.dll"
-cp mod_manifest.json "$CONTENT/STS2_DamageCharts.json"
+cp out/SpireLedger.dll "$CONTENT/SpireLedger.dll"
+cp mod_manifest.json "$CONTENT/SpireLedger.json"
 echo "    $(ls -1 "$CONTENT" | tr '\n' ' ')"
 
 UPLOADER="${MODUPLOADER:-./tools/ModUploader}"

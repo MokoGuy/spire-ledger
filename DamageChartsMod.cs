@@ -15,7 +15,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Runs;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // Standalone in-combat damage analytics overlay. Reads game state directly; no dependency on
 // any other mod. Capture is event-driven (Creature.CurrentHpChanged) for amounts, with a single
@@ -24,7 +24,7 @@ namespace STS2_DamageCharts;
 [ModInitializer("Initialize")]
 public static class DamageChartsMod
 {
-    private const string ConfigFileName = "STS2_DamageCharts.conf";
+    private const string ConfigFileName = "SpireLedger.conf";
     private const string BuildTag = "2026-10-22";  // stamped at init so logs identify the loaded DLL
 
     private static readonly Color[] Palette = UiTheme.Players;
@@ -33,7 +33,7 @@ public static class DamageChartsMod
     private static bool _disabled;            // hard kill-switch: once set, nothing runs again
     private static Callable _tickCallable;     // stored so we can disconnect ProcessFrame on disable
     private static readonly string[] HarmonyIds =
-        { "com.sts2damagecharts", "com.sts2damagecharts.suppress", "com.sts2damagecharts.deck", "com.sts2damagecharts.powers" };
+        { "com.spireledger", "com.spireledger.suppress", "com.spireledger.deck", "com.spireledger.powers" };
     // The full always-on per-round chart read as "too much" for casual players, so the default is a compact
     // strip docked above the forecast ("bars_style": "full" restores the big one; "show_bars": false hides it).
     private static bool _showBars = true;
@@ -104,7 +104,7 @@ public static class DamageChartsMod
         TryApplySentryShutdownWorkaround();
         try
         {
-            if (!LoadConfig()) { GD.Print("[STS2 Damage] disabled via config"); return; }
+            if (!LoadConfig()) { GD.Print("[SpireLedger] disabled via config"); return; }
 
             var tree = (SceneTree)Engine.GetMainLoop();
             _tickCallable = Callable.From(Tick);
@@ -114,11 +114,11 @@ public static class DamageChartsMod
             TryApplyPotionHook();
             TryApplySuppressHook();
             if (_sourceHooks) TryApplyPowerSourceHooks();
-            else GD.Print("[STS2 Damage] power-source hooks DISABLED via config");
+            else GD.Print("[SpireLedger] power-source hooks DISABLED via config");
             _initialized = true;
-            GD.Print($"[STS2 Damage] initialized (build {BuildTag}, source_hooks={_sourceHooks})");
+            GD.Print($"[SpireLedger] initialized (build {BuildTag}, source_hooks={_sourceHooks})");
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] init failed: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] init failed: {ex.Message}"); }
     }
 
     // ===== Sentry startup-freeze workaround =====
@@ -143,14 +143,14 @@ public static class DamageChartsMod
             _sentryInitField = svc != null ? AccessTools.Field(svc, "_sentryInit") : null;
             if (shutdown == null || _sentryInitField == null || !_sentryInitField.IsStatic)
             {
-                GD.Print("[STS2 Damage] sentry shutdown workaround not applied (game changed?)");
+                GD.Print("[SpireLedger] sentry shutdown workaround not applied (game changed?)");
                 return;
             }
-            new Harmony("com.sts2damagecharts.sentry").Patch(shutdown,
+            new Harmony("com.spireledger.sentry").Patch(shutdown,
                 prefix: new HarmonyMethod(typeof(DamageChartsMod).GetMethod(nameof(SentryShutdownPrefix), BindingFlags.NonPublic | BindingFlags.Static)));
-            GD.Print("[STS2 Damage] sentry shutdown workaround applied");
+            GD.Print("[SpireLedger] sentry shutdown workaround applied");
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] sentry shutdown workaround skipped: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] sentry shutdown workaround skipped: {ex.Message}"); }
     }
 
     private static void SentryShutdownPrefix()
@@ -159,7 +159,7 @@ public static class DamageChartsMod
         {
             if (_sentryInitField?.GetValue(null) == null) return;
             _sentryInitField.SetValue(null, null);
-            GD.Print("[STS2 Damage] skipped native Sentry shutdown (modded-startup freeze workaround)");
+            GD.Print("[SpireLedger] skipped native Sentry shutdown (modded-startup freeze workaround)");
         }
         catch { /* never block the game's own shutdown path */ }
     }
@@ -218,7 +218,7 @@ public static class DamageChartsMod
             if (root.TryGetProperty("pos_x_frac", out var px) && px.TryGetSingle(out var fx)) _posXFrac = fx;
             if (root.TryGetProperty("pos_y_frac", out var py) && py.TryGetSingle(out var fy)) _posYFrac = fy;
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] config parse failed, using defaults: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] config parse failed, using defaults: {ex.Message}"); }
         return true;
     }
 
@@ -262,7 +262,7 @@ public static class DamageChartsMod
             RememberConfigWriteTime(path);
             _posXFrac = pos.X; _posYFrac = pos.Y;
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] save config failed: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] save config failed: {ex.Message}"); }
     }
 
     private static Vector2 _fcForecastPosRounded()
@@ -291,7 +291,7 @@ public static class DamageChartsMod
                     _hotkeySpec = spec!;
                     ParseHotkey(_hotkeySpec);
                     _hotkeyDownLast = false;
-                    GD.Print($"[STS2 Damage] hotkey reloaded live: {_hotkeySpec}");
+                    GD.Print($"[SpireLedger] hotkey reloaded live: {_hotkeySpec}");
                 }
             }
             bool showBars = !(root.TryGetProperty("show_bars", out var sb) && sb.ValueKind == JsonValueKind.False);
@@ -302,7 +302,7 @@ public static class DamageChartsMod
             }
             VfxMoments.Enabled = root.TryGetProperty("vfx_moments", out var vm) && vm.ValueKind == JsonValueKind.True;
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] config reload failed: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] config reload failed: {ex.Message}"); }
     }
 
     private static Vector2 RootMouse()
@@ -345,12 +345,12 @@ public static class DamageChartsMod
         try
         {
             var method = ResolveDamageMethod();
-            if (method == null) { GD.Print("[STS2 Damage] damage hook not resolved; dealt attribution will use active player"); return; }
+            if (method == null) { GD.Print("[SpireLedger] damage hook not resolved; dealt attribution will use active player"); return; }
             var prefix = new HarmonyMethod(typeof(DamageChartsMod).GetMethod(nameof(DamagePrefix), BindingFlags.NonPublic | BindingFlags.Static));
-            new Harmony("com.sts2damagecharts").Patch(method, prefix: prefix);
-            GD.Print("[STS2 Damage] damage dealer hook applied");
+            new Harmony("com.spireledger").Patch(method, prefix: prefix);
+            GD.Print("[SpireLedger] damage dealer hook applied");
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] damage hook skipped: {ex.GetType().Name}: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] damage hook skipped: {ex.GetType().Name}: {ex.Message}"); }
     }
 
     // Potions used: postfix on CombatHistory.PotionUsed (sts2.dll v0.107.1), which the game calls once a potion
@@ -362,12 +362,12 @@ public static class DamageChartsMod
         {
             var hist = AccessTools.TypeByName("MegaCrit.Sts2.Core.Combat.History.CombatHistory");
             var method = hist != null ? AccessTools.Method(hist, "PotionUsed") : null;
-            if (method == null) { GD.Print("[STS2 Damage] potion hook not resolved; potions won't be listed"); return; }
+            if (method == null) { GD.Print("[SpireLedger] potion hook not resolved; potions won't be listed"); return; }
             var postfix = new HarmonyMethod(typeof(DamageChartsMod).GetMethod(nameof(PotionUsedPostfix), BindingFlags.NonPublic | BindingFlags.Static));
-            new Harmony("com.sts2damagecharts").Patch(method, postfix: postfix);
-            GD.Print("[STS2 Damage] potion hook applied");
+            new Harmony("com.spireledger").Patch(method, postfix: postfix);
+            GD.Print("[SpireLedger] potion hook applied");
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] potion hook skipped: {ex.GetType().Name}: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] potion hook skipped: {ex.GetType().Name}: {ex.Message}"); }
     }
 
     private static void PotionUsedPostfix(object[] __args)
@@ -409,18 +409,18 @@ public static class DamageChartsMod
             if (method != null)
             {
                 var prefix = new HarmonyMethod(typeof(DamageChartsMod).GetMethod(nameof(SuppressPrefix), BindingFlags.NonPublic | BindingFlags.Static));
-                new Harmony("com.sts2damagecharts.suppress").Patch(method, prefix: prefix);
-                GD.Print("[STS2 Damage] hotkey suppress hook applied");
+                new Harmony("com.spireledger.suppress").Patch(method, prefix: prefix);
+                GD.Print("[SpireLedger] hotkey suppress hook applied");
             }
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] hotkey suppress hook skipped: {ex.GetType().Name}: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] hotkey suppress hook skipped: {ex.GetType().Name}: {ex.Message}"); }
 
         // (b) Block only the deck-open itself (NDeckViewScreen.ShowScreen) when our modifier is held.
         // This exists ONLY to stop a D-based hotkey (e.g. cmd+d) from also opening the deck — so it is
         // installed only when our hotkey actually uses the D key. With any other hotkey (the default is
         // bare C) there is no collision, and patching ShowScreen at all would needlessly risk the deck
         // not opening, so we skip it entirely.
-        if (_hotkeyKey != Key.D) { GD.Print("[STS2 Damage] deck-open suppress hook not needed (hotkey isn't D)"); return; }
+        if (_hotkeyKey != Key.D) { GD.Print("[SpireLedger] deck-open suppress hook not needed (hotkey isn't D)"); return; }
         // We deliberately do NOT patch the button's OnRelease: that handler also resets the button's
         // press animation, so skipping it leaves the button stuck mid-rotation. Letting OnRelease run
         // normally (press→release animation, no deck) while no-opping ShowScreen looks clean.
@@ -428,12 +428,12 @@ public static class DamageChartsMod
         {
             var deckScreen = AccessTools.TypeByName("MegaCrit.Sts2.Core.Nodes.Screens.NDeckViewScreen");
             var showScreen = deckScreen != null ? AccessTools.Method(deckScreen, "ShowScreen") : null;
-            if (showScreen == null) { GD.Print("[STS2 Damage] deck-open suppress hook not resolved"); return; }
+            if (showScreen == null) { GD.Print("[SpireLedger] deck-open suppress hook not resolved"); return; }
             var dp = new HarmonyMethod(typeof(DamageChartsMod).GetMethod(nameof(DeckOpenPrefix), BindingFlags.NonPublic | BindingFlags.Static));
-            new Harmony("com.sts2damagecharts.deck").Patch(showScreen, prefix: dp);
-            GD.Print("[STS2 Damage] deck-open suppress hook applied");
+            new Harmony("com.spireledger.deck").Patch(showScreen, prefix: dp);
+            GD.Print("[SpireLedger] deck-open suppress hook applied");
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] deck-open suppress hook skipped: {ex.GetType().Name}: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] deck-open suppress hook skipped: {ex.GetType().Name}: {ex.Message}"); }
     }
 
     // Skip opening the deck view when our hotkey's modifier(s) are physically held (i.e. Cmd+D).
@@ -578,7 +578,7 @@ public static class DamageChartsMod
             var prefix = new HarmonyMethod(typeof(DamageChartsMod).GetMethod(nameof(PowerSourcePrefix), BindingFlags.NonPublic | BindingFlags.Static));
             var doomPrefix = new HarmonyMethod(typeof(DamageChartsMod).GetMethod(nameof(DoomKillPrefix), BindingFlags.NonPublic | BindingFlags.Static));
             try { var dp = "res://images/atlases/power_atlas.sprites/doom_power.tres"; if (ResourceLoader.Exists(dp)) _doomIcon = dp; } catch { }
-            var h = new Harmony("com.sts2damagecharts.powers");
+            var h = new Harmony("com.spireledger.powers");
 
             // Doom kills via CreatureCmd.Kill (animation-delayed) — pre-tag the doomed creatures by
             // reference so the kill-time HP loss is labeled "Doom" regardless of timing.
@@ -605,10 +605,10 @@ public static class DamageChartsMod
                     if (!found) missing.Add(typeName + "." + name);
                 }
             }
-            GD.Print($"[STS2 Damage] power-source hooks applied to {n} methods");
-            if (missing.Count > 0) GD.Print($"[STS2 Damage] power-source hooks not found (game changed?): {string.Join(", ", missing)}");
+            GD.Print($"[SpireLedger] power-source hooks applied to {n} methods");
+            if (missing.Count > 0) GD.Print($"[SpireLedger] power-source hooks not found (game changed?): {string.Join(", ", missing)}");
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] power-source hooks skipped: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] power-source hooks skipped: {ex.Message}"); }
     }
 
     // Pre-tag doomed creatures so their kill-time HP loss is attributed to "Doom".
@@ -637,7 +637,7 @@ public static class DamageChartsMod
             }
             _activeSource = (label!, icon);
             _activeFrame = _frame;
-            if (ForecastReader.Debug) GD.Print($"[STS2 Damage] STAMP {t.Name} label={label} frame={_frame}");
+            if (ForecastReader.Debug) GD.Print($"[SpireLedger] STAMP {t.Name} label={label} frame={_frame}");
         }
         catch { }
     }
@@ -701,7 +701,7 @@ public static class DamageChartsMod
             if (inCombat != _combatLast)
             {
                 try { if (inCombat) OnCombatStart(); else OnCombatEnd(); }
-                catch (Exception ex) { GD.PrintErr($"[STS2 Damage] lifecycle error: {ex.Message}"); }
+                catch (Exception ex) { GD.PrintErr($"[SpireLedger] lifecycle error: {ex.Message}"); }
                 _combatLast = inCombat;
             }
 
@@ -825,7 +825,7 @@ public static class DamageChartsMod
         if (_disabled) return;
         _disabled = true;
         _initialized = false;
-        try { GD.PrintErr($"[STS2 Damage] disabled: {reason}"); } catch { }
+        try { GD.PrintErr($"[SpireLedger] disabled: {reason}"); } catch { }
         try { ((SceneTree)Engine.GetMainLoop()).Disconnect(SceneTree.SignalName.ProcessFrame, _tickCallable); } catch { }
         foreach (var id in HarmonyIds) { try { new Harmony(id).UnpatchAll(id); } catch { } }
         SafeTeardown();
@@ -904,10 +904,10 @@ public static class DamageChartsMod
                 foreach (var it in r.Items) detail += $" [{it.Kind} {it.Label} {it.Hits}x{it.DamagePerHit}]";
                 string line = $"in={r.Incoming} block={r.Block} loss={r.MinLoss}-{r.MaxLoss} " +
                               $"hidden={r.HasHidden} hp={r.CurrentHp}/{r.MaxHp} frozen={!ForecastReader.IsPlanningPhase(_players, _localSlot)} items={r.Items.Count}{detail}";
-                if (line != _lastForecastLog) { _lastForecastLog = line; GD.Print($"[STS2 Damage] forecast {line}"); }
+                if (line != _lastForecastLog) { _lastForecastLog = line; GD.Print($"[SpireLedger] forecast {line}"); }
             }
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] forecast error: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] forecast error: {ex.Message}"); }
     }
 
     private static void HandleHotkey()
@@ -967,7 +967,7 @@ public static class DamageChartsMod
         _pending.Clear();
         UnsubscribeAll();
         EnsureViews();
-        GD.Print($"[STS2 Damage] combat start ({_players.Count} player(s))");
+        GD.Print($"[SpireLedger] combat start ({_players.Count} player(s))");
     }
 
     private static void OnCombatEnd()
@@ -985,7 +985,7 @@ public static class DamageChartsMod
         _summaryAvailable = _summaryActive;
         _rewardsSeen = false;
         if (!_summaryActive) _detail?.SetVisible(false);
-        GD.Print($"[STS2 Damage] combat end (summary={_summaryActive})");
+        GD.Print($"[SpireLedger] combat end (summary={_summaryActive})");
     }
 
     private static bool _layersDumped;
@@ -1006,15 +1006,15 @@ public static class DamageChartsMod
                     if (creature != null) cr = $" creature.hp={ForecastReaderPeekHp(creature)} isPlayer={InstanceGet(creature, "IsPlayer")}";
                 }
                 catch { }
-                GD.Print($"[STS2 Damage] NODE NHealthBar rect={rect} vis={(n as CanvasItem)?.Visible}{cr}");
+                GD.Print($"[SpireLedger] NODE NHealthBar rect={rect} vis={(n as CanvasItem)?.Visible}{cr}");
             }
             foreach (var n in FindByTypeName(root, "NEndTurnButton"))
             {
                 string rect = n is Control c ? c.GetGlobalRect().ToString() : "(not Control)";
-                GD.Print($"[STS2 Damage] NODE NEndTurnButton type={n.GetType().Name} rect={rect}");
+                GD.Print($"[SpireLedger] NODE NEndTurnButton type={n.GetType().Name} rect={rect}");
             }
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] node dump failed: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] node dump failed: {ex.Message}"); }
     }
 
     private static List<Node> FindByTypeName(Node start, string typeName)
@@ -1056,7 +1056,7 @@ public static class DamageChartsMod
                 string kids = "";
                 foreach (var t in new[] { "NHoverTip", "NCardPreview", "NGlobalUi", "NTooltip", "HoverTip", "Preview", "Modal" })
                     if (FindDescendantNamed(cl, t)) { kids += t + " "; }
-                GD.Print($"[STS2 Damage] LAYER name='{cl.Name}' layer={cl.Layer} contains=[{kids}]");
+                GD.Print($"[SpireLedger] LAYER name='{cl.Name}' layer={cl.Layer} contains=[{kids}]");
             }
             foreach (var c in node.GetChildren()) DumpCanvasLayers(c, depth + 1);
         }
@@ -1099,7 +1099,7 @@ public static class DamageChartsMod
             if (_bars != null) _bars.UiScaleMul = _uiScale;
             _detail?.SetVisible(_detailVisible);
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] failed to create views: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] failed to create views: {ex.Message}"); }
     }
 
     // ===== Capture =====
@@ -1220,7 +1220,7 @@ public static class DamageChartsMod
                     : (pend.Label ?? ConsumeActive().Label ?? "Unknown");
                 string victim = MaybeName(creature);
                 _tracker.AddTaken(round, slot, lost, attacker);
-                if (ForecastReader.Debug) GD.Print($"[STS2 Damage] HIT taken src={attacker} amt={lost} round={round} frame={_frame}");
+                if (ForecastReader.Debug) GD.Print($"[SpireLedger] HIT taken src={attacker} amt={lost} round={round} frame={_frame}");
                 VfxMoments.OnTaken(creature, lost);
                 _tracker.AddLog(round, $"{attacker} → {victim}  {lost}", true);
                 return;
@@ -1237,7 +1237,7 @@ public static class DamageChartsMod
             if (pend.Label != null) { src = pend.Label; icon = pend.Icon; }
             else { var a = ConsumeActive(); src = a.Label ?? "Status"; icon = a.Icon; } // Doom/Kill & other non-Damage paths
             _tracker.AddDealt(round, dslot, lost, src, icon);
-            if (ForecastReader.Debug) GD.Print($"[STS2 Damage] HIT dealt src={src} amt={lost} round={round} frame={_frame}");
+            if (ForecastReader.Debug) GD.Print($"[SpireLedger] HIT dealt src={src} amt={lost} round={round} frame={_frame}");
             if (dslot == _localSlot) VfxMoments.OnDealt(creature, lost, src, icon);
             _tracker.AddLog(round, $"{src} → {TextHelper.SafeGetText(() => creature.Monster!.Title) ?? "Enemy"}  {lost}", false);
         }

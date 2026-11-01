@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 internal sealed class HoverInfo
 {
@@ -416,7 +416,7 @@ internal sealed class DamageChartView
             HideRest(_icons, iconCur);
             HideRest(_grid, gridCur);
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] bars render error: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] bars render error: {ex.Message}"); }
     }
 
     private static int F(int baseSize, float sc) => Math.Max(7, (int)Math.Round(baseSize * sc));

@@ -1,4 +1,10 @@
-# Damage Charts — Slay the Spire 2 mod
+# Spire Ledger — Slay the Spire 2 mod
+
+> Fork of [brian-gates/sts2-damage-charts](https://github.com/brian-gates/sts2-damage-charts) (MIT) focused on
+> co-op: correct per-player attribution in multiplayer, per-run stats history saved locally (game mode,
+> badges), a detailed end-of-run recap and a local HTML history page. Work in progress — the sections
+> below still describe the upstream Damage Charts mod.
+
 
 A standalone damage analytics and incoming-damage forecast mod for [Slay the Spire 2](https://store.steampowered.com/app/2868840/).
 
@@ -68,10 +74,10 @@ platform; only the install path and the `mods/` location differ.
 
 ```bash
 GAME_DIR="$HOME/Library/Application Support/Steam/steamapps/common/Slay the Spire 2"
-dotnet build STS2_DamageCharts.csproj -c Release -o out -p:STS2GameDir="$GAME_DIR"
+dotnet build SpireLedger.csproj -c Release -o out -p:STS2GameDir="$GAME_DIR"
 MODS_DIR="$GAME_DIR/SlayTheSpire2.app/Contents/MacOS/mods"
-cp out/STS2_DamageCharts.dll "$MODS_DIR/"
-cp mod_manifest.json "$MODS_DIR/STS2_DamageCharts.json"
+cp out/SpireLedger.dll "$MODS_DIR/"
+cp mod_manifest.json "$MODS_DIR/SpireLedger.json"
 ```
 
 ### Windows
@@ -79,18 +85,18 @@ cp mod_manifest.json "$MODS_DIR/STS2_DamageCharts.json"
 ```powershell
 # Adjust to your Steam library; the .csproj defaults to D:\SteamLibrary\... if unset.
 $GameDir = "C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2"
-dotnet build STS2_DamageCharts.csproj -c Release -o out -p:STS2GameDir="$GameDir"
-copy out\STS2_DamageCharts.dll "$GameDir\mods\"
-copy mod_manifest.json "$GameDir\mods\STS2_DamageCharts.json"
+dotnet build SpireLedger.csproj -c Release -o out -p:STS2GameDir="$GameDir"
+copy out\SpireLedger.dll "$GameDir\mods\"
+copy mod_manifest.json "$GameDir\mods\SpireLedger.json"
 ```
 
 ### Linux
 
 ```bash
 GAME_DIR="$HOME/.steam/steam/steamapps/common/Slay the Spire 2"
-dotnet build STS2_DamageCharts.csproj -c Release -o out -p:STS2GameDir="$GAME_DIR"
-cp out/STS2_DamageCharts.dll "$GAME_DIR/mods/"
-cp mod_manifest.json "$GAME_DIR/mods/STS2_DamageCharts.json"
+dotnet build SpireLedger.csproj -c Release -o out -p:STS2GameDir="$GAME_DIR"
+cp out/SpireLedger.dll "$GAME_DIR/mods/"
+cp mod_manifest.json "$GAME_DIR/mods/SpireLedger.json"
 ```
 
 Then launch the game and enable **Damage Charts** in **Settings → Mods** (accept the consent dialog
@@ -127,7 +133,7 @@ and writes `dist/workshop/mod_id.txt` — **commit that file** so later runs upd
 After the first publish, subscribe in-client and verify the overlay loads in a run, then flip
 `visibility` to `public` (in `workshop.json` or on the Workshop page) and re-run the script.
 
-## Config — `STS2_DamageCharts.conf` (next to the DLL in `mods/`)
+## Config — `SpireLedger.conf` (next to the DLL in `mods/`)
 
 ```json
 {

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // A single dealt hit (one damage event) within a round, for the stacked per-attack bar.
 internal readonly struct DealtSeg

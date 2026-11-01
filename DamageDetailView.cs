@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // The breakdown view. Two modes:
 //  - Interactive (hotkey-toggled): a full-screen takeover — dimmed backdrop, two wide columns
@@ -548,7 +548,7 @@ internal sealed class DamageDetailView
             for (int i = barCur; i < _bars.Count; i++) _bars[i].Visible = false;
             for (int i = iconCur; i < _icons.Count; i++) _icons[i].Visible = false;
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] detail render error: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] detail render error: {ex.Message}"); }
     }
 
     // Run-recap totals strip: four big stats (Dealt / Taken / Healed / Block) spread across the width.

@@ -5,7 +5,7 @@ Relaunches the game repeatedly; each launch stages a couple of fights through ST
 with a rotating batch of the hooked powers, relics and potions, plays them with the screenshot script's
 simple policy, and reads the game's stdout for:
 
-  - stability: "Bad IL range", the mod disabling itself, any [STS2 Damage] error, the game crashing, or
+  - stability: "Bad IL range", the mod disabling itself, any [SpireLedger] error, the game crashing, or
     the API going unresponsive (sampled with `sample` as a suspected freeze);
   - attribution: which hooked types fired (debug STAMP lines) and what each hit was credited to (HIT lines).
 

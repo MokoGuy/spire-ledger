@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // Run-scoped accumulator: folds each finished combat's per-combat snapshot into run-wide totals,
 // by-source breakdowns, a per-encounter chart, and a combat log. Emits the SAME ChartSnapshot /

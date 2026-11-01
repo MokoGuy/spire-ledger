@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Godot;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // Small themed popup shown near the cursor when hovering a round's bar: that round's dealt-by-source
 // (icon + name + xN + amount) plus the round's taken total. Flips to the cursor's left/up near screen
@@ -80,7 +80,7 @@ internal sealed class DamageTooltipView
             for (int i = cur; i < _labels.Count; i++) _labels[i].Visible = false;
             for (int i = iconCur; i < _icons.Count; i++) _icons[i].Visible = false;
         }
-        catch (Exception ex) { GD.PrintErr($"[STS2 Damage] tooltip render error: {ex.Message}"); }
+        catch (Exception ex) { GD.PrintErr($"[SpireLedger] tooltip render error: {ex.Message}"); }
     }
 
     // The original flat look (native_visuals off, or the game's hover-tip art unavailable).

@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using MegaCrit.Sts2.Core.Localization;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 internal static class TextHelper
 {

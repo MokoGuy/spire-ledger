@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // Shared visual styling that matches STS2's own look (StsColors palette + game font + outlines),
 // plus a resolution scale helper, so the overlay reads as native and adapts to any window size.
@@ -118,7 +118,7 @@ internal static class UiTheme
                 sb.SetTextureMargin(Side.Bottom, np.PatchMarginBottom);
                 _nativePanel = sb;
                 _panelResolved = true;
-                GD.Print($"[STS2 Damage] native panel captured: tex='{np.Texture.ResourcePath}' " +
+                GD.Print($"[SpireLedger] native panel captured: tex='{np.Texture.ResourcePath}' " +
                          $"margins=L{np.PatchMarginLeft} T{np.PatchMarginTop} R{np.PatchMarginRight} B{np.PatchMarginBottom}");
             }
             catch { }

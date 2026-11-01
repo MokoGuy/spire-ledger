@@ -6,7 +6,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // Reads live combat state into a plain ForecastInputs. Every game access is reflection-by-name so a
 // game rename degrades to "unknown" (hidden flag) rather than crashing combat. Never throws.
@@ -448,7 +448,7 @@ internal static class ForecastReader
                 sb.Append($"[{tn} HpLoss={hp} Calc={calc} Damage={dmg} desc=\"{(desc ?? "").Replace("\n", " ")}\"] ");
             }
             string s = sb.ToString();
-            if (s != _lastHandDbg) { _lastHandDbg = s; Godot.GD.Print($"[STS2 Damage] DIAG hand: {s}"); }
+            if (s != _lastHandDbg) { _lastHandDbg = s; Godot.GD.Print($"[SpireLedger] DIAG hand: {s}"); }
         }
         catch { }
     }
@@ -532,8 +532,8 @@ internal static class ForecastReader
                         DumpObj("intent", it);
                         if (GetProp(it, "DamageCalc") is Delegate del)
                         {
-                            object? res = null; try { res = del.DynamicInvoke(); } catch (Exception e) { Godot.GD.Print($"[STS2 Damage] DIAG DamageCalc threw: {e.Message}"); }
-                            if (res is int ri) Godot.GD.Print($"[STS2 Damage] DIAG DamageCalc()=int {ri}");
+                            object? res = null; try { res = del.DynamicInvoke(); } catch (Exception e) { Godot.GD.Print($"[SpireLedger] DIAG DamageCalc threw: {e.Message}"); }
+                            if (res is int ri) Godot.GD.Print($"[SpireLedger] DIAG DamageCalc()=int {ri}");
                             else DumpObj("DamageCalc()", res);
                         }
                     }
@@ -546,7 +546,7 @@ internal static class ForecastReader
                 DumpObj("player object", pl);
                 object? pcs = GetProp(pl!, "PlayerCombatState") ?? GetProp(pl!, "CombatState");
                 DumpObj("player.PlayerCombatState", pcs);
-                Godot.GD.Print($"[STS2 Damage] DIAG IsOstyAlive={GetProp(pl!, "IsOstyAlive")}");
+                Godot.GD.Print($"[SpireLedger] DIAG IsOstyAlive={GetProp(pl!, "IsOstyAlive")}");
                 DumpObj("player.Osty", GetProp(pl!, "Osty"));
                 object? hand = FindHand(pl!, cs);
                 DumpObj("resolved hand", hand);
@@ -555,13 +555,13 @@ internal static class ForecastReader
                     foreach (var c in cards) { if (c != null) { DumpObj("hand card", c); break; } }
             }
         }
-        catch (Exception ex) { Godot.GD.PrintErr($"[STS2 Damage] DIAG failed: {ex.Message}"); }
+        catch (Exception ex) { Godot.GD.PrintErr($"[SpireLedger] DIAG failed: {ex.Message}"); }
     }
 
     // Generic one-line dump of an object's public instance members (name=value; enumerables as [N items]).
     private static void DumpObj(string label, object? o)
     {
-        if (o == null) { Godot.GD.Print($"[STS2 Damage] DIAG {label}=null"); return; }
+        if (o == null) { Godot.GD.Print($"[SpireLedger] DIAG {label}=null"); return; }
         var sb = new System.Text.StringBuilder();
         try
         {
@@ -580,6 +580,6 @@ internal static class ForecastReader
             }
         }
         catch { }
-        Godot.GD.Print($"[STS2 Damage] DIAG {label} ({o.GetType().Name}): {sb}");
+        Godot.GD.Print($"[SpireLedger] DIAG {label} ({o.GetType().Name}): {sb}");
     }
 }

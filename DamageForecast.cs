@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 internal enum ForecastKind { Attack, Dot, SelfCard, NonAttackHpLoss, Hidden }
 

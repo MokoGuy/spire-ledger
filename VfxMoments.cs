@@ -8,7 +8,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 
-namespace STS2_DamageCharts;
+namespace SpireLedger;
 
 // Opt-in "big moment" flourishes (config "vfx_moments", default off) built from the GAME'S OWN combat VFX:
 //   - new biggest single hit this combat -> NDamageNumVfx (gold "BEST n", spawned above the game's own number)
@@ -280,7 +280,7 @@ internal static class VfxMoments
                 _pInteractable = AccessTools.Property(tCreature, "IsInteractable");
             }
             if (_mDamageNumCreate == null || _mBlockedCreate == null || _mFlashCreate == null || _pVfxContainer == null || _pVfxSpawnPos == null)
-                GD.Print("[STS2 Damage] vfx_moments: some game VFX members not found; those moments are skipped");
+                GD.Print("[SpireLedger] vfx_moments: some game VFX members not found; those moments are skipped");
         }
         catch { }
     }
