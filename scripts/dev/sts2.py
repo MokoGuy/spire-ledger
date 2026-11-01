@@ -8,11 +8,16 @@ exposes game state and actions on http://127.0.0.1:15526. It is only copied into
 Usage: python scripts/dev/sts2.py <command> [args]
   install | uninstall          copy/remove STS2_MCP.dll + manifest in the game's mods/ folder
   deploy                       copy the built SpireLedger.dll + manifest into mods/
-  launch | quit                start the game (waits for the API) / close it
+  launch | quit                start the game through Steam (waits for the API) / close all instances
+  launch-local [args...]       start a Steam-less instance (--force-steam off, saves under
+                               %APPDATA%/SlayTheSpire2/default) on STS2MCP_PORT, e.g. --fastmp host_custom
+  Set STS2MCP_PORT to talk to another instance and STS2_API=multiplayer for co-op state/actions.
   state                        print the singleplayer state (markdown)
   act <action> [k=v ...]       POST an action, e.g. act play_card card_index=0 target=JAW_WORM_0
   console <command...>         run a dev-console command, e.g. console fight JAW_WORM
   shot <name>                  save the viewport to %TEMP%/sts2shots/<name>.png
+  fight [max_rounds]           auto-play the current fight: attacks on the weakest enemy, skills on self,
+                               then end turn, until the fight is over (simple, deterministic policy)
   log [pattern]                print [SpireLedger] lines (or lines matching pattern) from the game log
 """
 import json
@@ -32,6 +37,7 @@ MCP_OUT = r"K:\Projets\sts2-tools\STS2MCP\out\STS2_MCP"
 MCP_MANIFEST = r"K:\Projets\sts2-tools\STS2MCP\mod_manifest.json"
 PORT = int(os.environ.get("STS2MCP_PORT", "15526"))
 BASE = f"http://127.0.0.1:{PORT}"
+API = "/api/v1/" + os.environ.get("STS2_API", "singleplayer")
 LOG = os.path.join(os.environ["APPDATA"], "SlayTheSpire2", "logs", "godot.log")
 
 
@@ -95,6 +101,20 @@ def launch(timeout=120):
     sys.exit("API did not come up (is STS2MCP installed and the modded save profile chosen?)")
 
 
+def launch_local(args, timeout=120):
+    env = dict(os.environ, STS2MCP_PORT=str(PORT))
+    subprocess.Popen([os.path.join(GAME_DIR, "SlayTheSpire2.exe"), "--force-steam", "off", *args], cwd=GAME_DIR,
+                     env=env, creationflags=subprocess.DETACHED_PROCESS,
+                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    end = time.time() + timeout
+    while time.time() < end:
+        if api_up():
+            print(f"API up on {PORT}")
+            return
+        time.sleep(2)
+    sys.exit(f"API did not come up on {PORT}")
+
+
 def quit_game(timeout=30):
     if not running():
         return
@@ -116,10 +136,43 @@ def parse_kv(args):
 
 
 def act(action, **params):
-    return http("POST", "/api/v1/singleplayer", {"action": action, **params})
+    return http("POST", API, {"action": action, **params})
+
+
+def get_json():
+    return http("GET", API + "?format=json")
+
+
+def auto_fight(max_rounds=30):
+    """Deterministic policy so a seeded run replays identically: Vulnerable-applying and other attacks on
+    the lowest-HP enemy, skills on self, end turn when nothing is playable."""
+    for _ in range(max_rounds * 12):
+        st = get_json()
+        if st.get("state_type") not in ("monster", "elite", "boss"):
+            return st.get("state_type")
+        b = st.get("battle", {})
+        if not b.get("is_play_phase") or b.get("turn") != "player":
+            time.sleep(0.5)
+            continue
+        enemies = [e for e in b.get("enemies", []) if e.get("hp", 0) > 0]
+        hand = [c for c in st["player"]["hand"] if c.get("can_play")]
+        if not hand or not enemies:
+            act("end_turn")
+            time.sleep(2)
+            continue
+        card = sorted(hand, key=lambda c: (c["type"] != "Attack", c["index"]))[0]
+        params = {"card_index": card["index"]}
+        if card.get("target_type") == "AnyEnemy":
+            params["target"] = min(enemies, key=lambda e: (e["hp"], e["entity_id"]))["entity_id"]
+        r = act("play_card", **params)
+        if r.get("status") != "ok":
+            act("end_turn")
+        time.sleep(1.2)
+    return "timeout"
 
 
 def main(argv):
+    sys.stdout.reconfigure(encoding="utf-8")
     if not argv:
         print(__doc__)
         return
@@ -132,16 +185,20 @@ def main(argv):
         deploy()
     elif cmd == "launch":
         launch()
+    elif cmd == "launch-local":
+        launch_local(rest)
     elif cmd == "quit":
         quit_game()
     elif cmd == "state":
-        print(http("GET", "/api/v1/singleplayer?format=markdown"))
+        print(http("GET", API + "?format=markdown"))
     elif cmd == "act":
         print(json.dumps(act(rest[0], **parse_kv(rest[1:])), indent=2, ensure_ascii=False))
     elif cmd == "console":
         print(json.dumps(act("console", command=" ".join(rest)), indent=2, ensure_ascii=False))
     elif cmd == "shot":
         print(json.dumps(act("screenshot", name=rest[0] if rest else "shot"), indent=2))
+    elif cmd == "fight":
+        print(auto_fight(int(rest[0]) if rest else 30))
     elif cmd == "log":
         pat = re.compile(rest[0] if rest else r"\[SpireLedger\]")
         with open(LOG, encoding="utf-8", errors="replace") as f:

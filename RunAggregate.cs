@@ -23,6 +23,13 @@ internal sealed class RunAggregate
     private long[] _block = Array.Empty<long>();
     private Dictionary<string, long>[] _dealtBySource = Array.Empty<Dictionary<string, long>>();
     private Dictionary<string, long>[] _takenBySource = Array.Empty<Dictionary<string, long>>();
+    private Dictionary<string, long>[] _effectsBySource = Array.Empty<Dictionary<string, long>>();
+    private Dictionary<string, long>[] _potionsBySource = Array.Empty<Dictionary<string, long>>();
+    private long[] _cards = Array.Empty<long>();
+    private long[] _energy = Array.Empty<long>();
+    private long[] _blockGiven = Array.Empty<long>();
+    private long[] _biggest = Array.Empty<long>();
+    private string[] _biggestSrc = Array.Empty<string>();
     private readonly Dictionary<string, string> _sourceIcon = new();
 
     private readonly List<int[]> _encDealt = new(); // per encounter: dealt[slot]
@@ -58,7 +65,9 @@ internal sealed class RunAggregate
         _localSlot = 0;
         _labels = Array.Empty<string>();
         _dealt = _taken = _heal = _block = Array.Empty<long>();
-        _dealtBySource = _takenBySource = Array.Empty<Dictionary<string, long>>();
+        _dealtBySource = _takenBySource = _effectsBySource = _potionsBySource = Array.Empty<Dictionary<string, long>>();
+        _cards = _energy = _blockGiven = _biggest = Array.Empty<long>();
+        _biggestSrc = Array.Empty<string>();
         _sourceIcon.Clear();
         _encDealt.Clear();
         _encTaken.Clear();
@@ -69,7 +78,7 @@ internal sealed class RunAggregate
     }
 
     // Add one finished combat. Reads the per-combat snapshots taken before the tracker is reset.
-    public void Fold(SourceSnapshot src, ChartSnapshot chart)
+    public void Fold(SourceSnapshot src, ChartSnapshot? chart)
     {
         if (src.PlayerCount <= 0) return;
         if (_playerCount != src.PlayerCount) Init(src);
@@ -89,6 +98,12 @@ internal sealed class RunAggregate
             _block[s] += ps.BlockTotal;
             Merge(_dealtBySource[s], ps.Dealt);
             Merge(_takenBySource[s], ps.Taken);
+            Merge(_effectsBySource[s], ps.Effects);
+            Merge(_potionsBySource[s], ps.Potions);
+            _cards[s] += ps.CardsPlayed;
+            _energy[s] += ps.EnergySpent;
+            _blockGiven[s] += ps.BlockGiven;
+            if (ps.BiggestHit > _biggest[s]) { _biggest[s] = ps.BiggestHit; _biggestSrc[s] = ps.BiggestHitSource; }
             encD[s] = (int)Math.Min(int.MaxValue, ps.DealtTotal);
             encT[s] = (int)Math.Min(int.MaxValue, ps.TakenTotal);
             encH[s] = ps.HealTotal;
@@ -115,10 +130,20 @@ internal sealed class RunAggregate
         _block = new long[_playerCount];
         _dealtBySource = new Dictionary<string, long>[_playerCount];
         _takenBySource = new Dictionary<string, long>[_playerCount];
+        _effectsBySource = new Dictionary<string, long>[_playerCount];
+        _potionsBySource = new Dictionary<string, long>[_playerCount];
+        _cards = new long[_playerCount];
+        _energy = new long[_playerCount];
+        _blockGiven = new long[_playerCount];
+        _biggest = new long[_playerCount];
+        _biggestSrc = new string[_playerCount];
         for (int s = 0; s < _playerCount; s++)
         {
             _dealtBySource[s] = new Dictionary<string, long>();
             _takenBySource[s] = new Dictionary<string, long>();
+            _effectsBySource[s] = new Dictionary<string, long>();
+            _potionsBySource[s] = new Dictionary<string, long>();
+            _biggestSrc[s] = "";
         }
     }
 
@@ -143,7 +168,15 @@ internal sealed class RunAggregate
                 Taken = SortedList(_takenBySource[s], out long tt),
                 HealTotal = _heal[s],
                 BlockTotal = _block[s],
+                Effects = SortedList(_effectsBySource[s], out long et),
+                Potions = SortedList(_potionsBySource[s], out _),
+                CardsPlayed = _cards[s],
+                EnergySpent = _energy[s],
+                BlockGiven = _blockGiven[s],
+                BiggestHit = _biggest[s],
+                BiggestHitSource = _biggestSrc[s],
             };
+            ps.EffectsTotal = et;
             ps.DealtTotal = dt;
             ps.TakenTotal = tt;
             perPlayer[s] = ps;

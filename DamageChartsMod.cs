@@ -22,7 +22,7 @@ namespace SpireLedger;
 // synchronous Harmony Prefix on CreatureCmd.Damage to attribute each hit to its source (card name
 // or, for powers/relics/orbs, the calling type resolved from the stack) and dealer.
 [ModInitializer("Initialize")]
-public static class DamageChartsMod
+public static partial class DamageChartsMod
 {
     private const string ConfigFileName = "SpireLedger.conf";
     private const string BuildTag = "2026-10-22";  // stamped at init so logs identify the loaded DLL
@@ -52,7 +52,7 @@ public static class DamageChartsMod
     private static bool _runActiveLast;
     private static readonly Dictionary<Creature, Action<int, int>> _subs = new();
     private static readonly Dictionary<Creature, Action<int, int>> _blockSubs = new();
-    private static readonly Dictionary<Creature, (string Label, Creature? Dealer, string? Icon)> _pending = new();
+    private static readonly Dictionary<Creature, (string Label, Creature? Dealer, string? Icon, Dictionary<int, decimal>? Shares)> _pending = new();
     // Set by a power's hook just before it deals damage; consumed by the next non-card hit. Only valid
     // for ~1 frame (a damaging hook stamps-and-deals synchronously) so a stale stamp from a passive
     // relic hook can't mislabel a later unrelated hit (e.g. a potion).
@@ -115,6 +115,8 @@ public static class DamageChartsMod
             TryApplySuppressHook();
             if (_sourceHooks) TryApplyPowerSourceHooks();
             else GD.Print("[SpireLedger] power-source hooks DISABLED via config");
+            TryApplyHistoryHooks();
+            TryApplyBadgeHook();
             _initialized = true;
             GD.Print($"[SpireLedger] initialized (build {BuildTag}, source_hooks={_sourceHooks})");
         }
@@ -617,7 +619,7 @@ public static class DamageChartsMod
         try
         {
             if (creatures == null) return;
-            foreach (var c in creatures) if (c != null) _pending[c] = ("Doom", null, _doomIcon);
+            foreach (var c in creatures) if (c != null) _pending[c] = ("Doom", null, _doomIcon, SharesFor(c, "DoomPower"));
         }
         catch { }
     }
@@ -636,6 +638,7 @@ public static class DamageChartsMod
                 catch { }
             }
             _activeSource = (label!, icon);
+            _activeShares = __instance is PowerModel pm ? SharesFor(pm) : null;
             _activeFrame = _frame;
             if (ForecastReader.Debug) GD.Print($"[SpireLedger] STAMP {t.Name} label={label} frame={_frame}");
         }
@@ -649,6 +652,7 @@ public static class DamageChartsMod
             if (targets == null) return;
             string label;
             string? icon = null;
+            Dictionary<int, decimal>? shares = null;
             if (cardSource != null)
             {
                 label = TextHelper.SafeGetText(() => cardSource.Title) ?? "Card";
@@ -665,11 +669,13 @@ public static class DamageChartsMod
                 // when fresh (~same frame) so a stale passive-relic stamp can't mislabel this hit.
                 label = _activeSource!.Value.Label;
                 icon = _activeSource.Value.Icon;
+                shares = _activeShares;
                 _activeSource = null; // consume
+                _activeShares = null;
             }
             else label = "Status"; // unattributed non-card damage
             foreach (var t in targets)
-                if (t != null) { _pending[t] = (label, dealer, icon); VfxMoments.NoteAttack(t, dealer); }
+                if (t != null) { _pending[t] = (label, dealer, icon, shares); VfxMoments.NoteAttack(t, dealer); }
         }
         catch { /* never disrupt damage resolution */ }
     }
@@ -960,11 +966,21 @@ public static class DamageChartsMod
         _recapVisible = false;   // the recap is an out-of-combat view
         _combatResolved = false; // until enemies/player actually die, this combat hasn't ended naturally
         _allEnemiesDeadFrames = 0;
+        _lastRound = 0;
         _frozenForecast = null;
         _localSlot = localSlot;
         _tracker.Reset(_players.Count, labels, localSlot);
+        if (rs != null)
+        {
+            // Run history (RunLedger.cs): on "continue", re-fold the combats already recorded for this run.
+            var restored = RunLedger.EnsureRun(rs, labels, localSlot);
+            if (restored != null) { _run.Clear(); foreach (var snap in restored) _run.Fold(snap, null); }
+            var cs = SafeCombatState();
+            if (cs != null) RunLedger.NoteCombatStart(rs, cs);
+        }
         VfxMoments.Reset(me);
         _pending.Clear();
+        ClearShares();
         UnsubscribeAll();
         EnsureViews();
         GD.Print($"[SpireLedger] combat start ({_players.Count} player(s))");
@@ -974,11 +990,14 @@ public static class DamageChartsMod
     {
         UnsubscribeAll();
         _pending.Clear();
+        ClearShares();
         _bars?.Hide();
         _tooltip?.Hide();
         _forecast?.Hide(); _forecastLedger?.Hide();
         // Fold this combat into the run-wide aggregate before the next combat's Reset() wipes the tracker.
         if (_tracker.HasData()) _run.Fold(_tracker.SourceSnapshot(), _tracker.Snapshot());
+        // Only fights that really ended go to the run history: quitting mid-fight replays it on continue.
+        if (_combatResolved && _tracker.HasData()) RunLedger.AddCombat(_tracker.SourceSnapshot(), _lastRound);
         // Auto-show the breakdown as an end-of-combat summary (until dismissed / map / next fight), but
         // only for a real win/loss — not when the player abandons combat (e.g. quits to the menu).
         _summaryActive = _summaryOnEnd && _combatResolved && _tracker.HasData();
@@ -1173,6 +1192,7 @@ public static class DamageChartsMod
         return false;
     }
     private static int _allEnemiesDeadFrames;
+    private static int _lastRound; // highest round seen this combat (for the run history)
 
     private static void OnBlockChanged(Creature creature, int oldBlock, int newBlock)
     {
@@ -1197,6 +1217,7 @@ public static class DamageChartsMod
             if (lost == 0) return;
 
             int round = SafeCombatState()?.RoundNumber ?? 0;
+            if (round > _lastRound) _lastRound = round;
 
             if (lost < 0) // HP gained — a heal (tracked as a per-player total, players only)
             {
@@ -1229,17 +1250,31 @@ public static class DamageChartsMod
             // Enemy lost HP -> damage dealt by a player (or their pet/summon, e.g. Necrobinder's Osty).
             var dealer = pend.Dealer;
             int dslot;
+            Dictionary<int, decimal>? shares = null;
             if (dealer != null && dealer.IsPlayer) dslot = SlotOf(dealer.Player);
             else if (dealer != null && dealer.IsPet) dslot = SlotOf(dealer.PetOwner); // pet → its owner
             else if (dealer != null && dealer.IsMonster) return; // genuine enemy-on-enemy, not player damage
-            else dslot = ActiveSlot();                            // dealer null (poison/doom/etc.) -> local player
+            else
+            {
+                // No dealer (Poison, Doom, …): credit whoever applied the power, split by stacks applied
+                // (CoopAttribution.cs). Only if nobody is known does it fall back to the local player.
+                shares = pend.Shares ?? (pend.Label == null && ActiveFresh() ? _activeShares : null);
+                dslot = ActiveSlot();
+            }
             string src; string? icon;
             if (pend.Label != null) { src = pend.Label; icon = pend.Icon; }
             else { var a = ConsumeActive(); src = a.Label ?? "Status"; icon = a.Icon; } // Doom/Kill & other non-Damage paths
-            _tracker.AddDealt(round, dslot, lost, src, icon);
-            if (ForecastReader.Debug) GD.Print($"[SpireLedger] HIT dealt src={src} amt={lost} round={round} frame={_frame}");
-            if (dslot == _localSlot) VfxMoments.OnDealt(creature, lost, src, icon);
-            _tracker.AddLog(round, $"{src} → {TextHelper.SafeGetText(() => creature.Monster!.Title) ?? "Enemy"}  {lost}", false);
+            var parts = shares != null ? Split(lost, shares) : null;
+            if (parts == null || parts.Count == 0) parts = new List<(int Slot, int Amount)> { (dslot, lost) };
+            string target = TextHelper.SafeGetText(() => creature.Monster!.Title) ?? "Enemy";
+            foreach (var (slot, amount) in parts)
+            {
+                _tracker.AddDealt(round, slot, amount, src, icon);
+                if (ForecastReader.Debug) GD.Print($"[SpireLedger] HIT dealt src={src} amt={amount} slot={slot} round={round} frame={_frame}");
+                if (slot == _localSlot) VfxMoments.OnDealt(creature, amount, src, icon);
+                string who = _players.Count > 1 ? $" ({PlayerName(slot)})" : "";
+                _tracker.AddLog(round, $"{src}{who} → {target}  {amount}", false);
+            }
         }
         catch { /* overlay must never break combat */ }
     }
@@ -1260,8 +1295,14 @@ public static class DamageChartsMod
 
     private static (string? Label, string? Icon) ConsumeActive()
     {
-        if (ActiveFresh()) { var v = _activeSource!.Value; _activeSource = null; return (v.Label, v.Icon); }
+        if (ActiveFresh()) { var v = _activeSource!.Value; _activeSource = null; _activeShares = null; return (v.Label, v.Icon); }
         return (null, null);
+    }
+
+    private static string PlayerName(int slot)
+    {
+        try { return TextHelper.SafeGetText(() => _players[slot].Character.Title) ?? $"P{slot + 1}"; }
+        catch { return $"P{slot + 1}"; }
     }
 
     private static int SlotOf(Player? player)

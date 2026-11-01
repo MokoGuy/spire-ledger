@@ -39,6 +39,13 @@ internal sealed class PlayerSources
     public long HealTotal;   // total HP healed this scope (no by-source breakdown)
     public long BlockTotal;  // total block gained this scope (no by-source breakdown)
     public List<SourceEntry> Potions = new();  // potions used this scope: name, times used, icon
+    public List<SourceEntry> Effects = new();  // powers applied to enemies/allies: name, total stacks, icon
+    public long EffectsTotal;    // total stacks applied
+    public long CardsPlayed;
+    public long EnergySpent;
+    public long BlockGiven;      // block this player's cards gave to other players
+    public long BiggestHit;      // largest single damage instance dealt
+    public string BiggestHitSource = "";
 }
 
 internal sealed class ChartRow
@@ -89,6 +96,11 @@ internal sealed class DamageTracker
     private readonly Dictionary<int, long> _healByPlayer = new();   // slot -> total healed
     private readonly Dictionary<int, long> _blockByPlayer = new();  // slot -> total block gained
     private readonly Dictionary<int, Dictionary<string, long>> _potionsByPlayer = new(); // slot -> potion -> uses
+    private readonly Dictionary<int, Dictionary<string, long>> _effectsByPlayer = new(); // slot -> power -> stacks
+    private readonly Dictionary<int, long> _cardsByPlayer = new();
+    private readonly Dictionary<int, long> _energyByPlayer = new();
+    private readonly Dictionary<int, long> _blockGivenByPlayer = new();
+    private readonly Dictionary<int, (long Amount, string Source)> _biggestHit = new();
     private readonly List<LogEntry> _log = new();
     private const int LogCap = 500;
     private const int LogShow = 300; // detail panel scrolls through this much history
@@ -109,6 +121,11 @@ internal sealed class DamageTracker
             _healByPlayer.Clear();
             _blockByPlayer.Clear();
             _potionsByPlayer.Clear();
+            _effectsByPlayer.Clear();
+            _cardsByPlayer.Clear();
+            _energyByPlayer.Clear();
+            _blockGivenByPlayer.Clear();
+            _biggestHit.Clear();
             _log.Clear();
             _maxRound = 0;
             _playerCount = Math.Max(1, playerCount);
@@ -155,6 +172,24 @@ internal sealed class DamageTracker
         }
     }
 
+    public void AddEffect(int slot, string name, long stacks, string? icon)
+    {
+        if (slot < 0 || stacks <= 0 || string.IsNullOrEmpty(name)) return;
+        lock (_lock)
+        {
+            if (!_effectsByPlayer.TryGetValue(slot, out var map)) { map = new Dictionary<string, long>(); _effectsByPlayer[slot] = map; }
+            map.TryGetValue(name, out long cur);
+            map[name] = cur + stacks;
+            if (icon != null && !_sourceIcon.ContainsKey(name)) _sourceIcon[name] = icon;
+        }
+    }
+
+    public void AddCardPlayed(int slot) => AddTotal(_cardsByPlayer, slot, 1);
+
+    public void AddEnergy(int slot, int amount) => AddTotal(_energyByPlayer, slot, amount);
+
+    public void AddBlockGiven(int slot, int amount) => AddTotal(_blockGivenByPlayer, slot, amount);
+
     private void AddTotal(Dictionary<int, long> byPlayer, int slot, int amount)
     {
         if (amount <= 0 || slot < 0) return;
@@ -184,6 +219,7 @@ internal sealed class DamageTracker
 
             if (field == 0) // dealt: remember the individual hit for the stacked per-attack bar
             {
+                if (!_biggestHit.TryGetValue(slot, out var big) || amount > big.Amount) _biggestHit[slot] = (amount, source);
                 if (!_dealtSegs.TryGetValue(key, out var segs)) { segs = new List<DealtSeg>(); _dealtSegs[key] = segs; }
                 segs.Add(new DealtSeg(amount, icon, source));
             }
@@ -228,6 +264,11 @@ internal sealed class DamageTracker
                 _healByPlayer.TryGetValue(s, out ps.HealTotal);
                 _blockByPlayer.TryGetValue(s, out ps.BlockTotal);
                 ps.Potions = SortedList(_potionsByPlayer, s, out _);
+                ps.Effects = SortedList(_effectsByPlayer, s, out ps.EffectsTotal);
+                _cardsByPlayer.TryGetValue(s, out ps.CardsPlayed);
+                _energyByPlayer.TryGetValue(s, out ps.EnergySpent);
+                _blockGivenByPlayer.TryGetValue(s, out ps.BlockGiven);
+                if (_biggestHit.TryGetValue(s, out var big)) { ps.BiggestHit = big.Amount; ps.BiggestHitSource = big.Source; }
                 perPlayer[s] = ps;
             }
             int from = Math.Max(0, _log.Count - LogShow);
