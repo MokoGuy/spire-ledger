@@ -2,8 +2,9 @@
   "id": "SpireLedger",
   "name": "Spire Ledger",
   "author": "MokoGuy (fork of Damage Charts by zaxnyd)",
-  "description": "Incoming-damage forecast and damage analytics: see how much HP you're about to lose this turn (docked beside your character), plus a hotkey-toggled (default C) breakdown of damage dealt and taken by source, potions used, an end-of-combat summary and a run recap. Uses the game's own look. Single-player and multiplayer.",
+  "description": "Co-op stats for Slay the Spire 2: who dealt the damage (Poison and Doom credited to whoever applied them), effects applied, block given, cards and energy, per fight and per run; an end-of-run recap with each player's badges; and a Ledger screen in the Compendium with your run history and records. Plus the Damage Charts forecast and combat breakdown (hotkey C).",
   "version": "0.1.0",
+  "min_game_version": "0.107.1",
   "has_pck": false,
   "has_dll": true,
   "affects_gameplay": false
