@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections.Generic;
 
@@ -16,9 +17,13 @@ internal readonly struct ForecastItem
     public readonly int DamagePerHit;
     public readonly bool Blockable;
     public readonly bool Conditional;
+    // Max HP the player loses for each hit of this item that gets past block (e.g. an enemy with Paper Cuts).
+    public readonly int MaxHpPerUnblockedHit;
 
-    public ForecastItem(string label, ForecastKind kind, int hits, int damagePerHit, bool blockable, bool conditional)
+    public ForecastItem(string label, ForecastKind kind, int hits, int damagePerHit, bool blockable, bool conditional,
+                        int maxHpPerUnblockedHit = 0)
     {
+        MaxHpPerUnblockedHit = maxHpPerUnblockedHit;
         Label = label;
         Kind = kind;
         Hits = hits;
@@ -65,10 +70,13 @@ internal readonly struct ForecastResult
     public readonly int MaxHp;
     public readonly bool HasHidden;
     public readonly IReadOnlyList<ForecastItem> Items;
+    public readonly int MaxHpLoss;  // permanent max HP lost this turn (guaranteed hits that get past block)
 
     public ForecastResult(int incoming, int mitigated, int minLoss, int maxLoss,
-        int block, int ostyAbsorb, int currentHp, int maxHp, bool hasHidden, IReadOnlyList<ForecastItem> items)
+        int block, int ostyAbsorb, int currentHp, int maxHp, bool hasHidden, IReadOnlyList<ForecastItem> items,
+        int maxHpLoss = 0)
     {
+        MaxHpLoss = maxHpLoss;
         Incoming = incoming;
         Mitigated = mitigated;
         MinLoss = minLoss;
@@ -138,6 +146,25 @@ internal static class DamageForecast
         int incoming = guaranteedAttack + guaranteedUnblockable;
 
         return new ForecastResult(incoming, mitigated, minLoss, maxLoss,
-            block, osty, inp.CurrentHp, inp.MaxHp, inp.HasHidden, items);
+            block, osty, inp.CurrentHp, inp.MaxHp, inp.HasHidden, items, MaxHpLoss(items, pool));
+    }
+
+    // Permanent max HP loss: replay the guaranteed blockable hits against the block pool, in order —
+    // end-of-turn self-damage (blockable DoTs) first, then enemy attacks in enemy order — and count, for
+    // items that carry a max-HP penalty, each hit that still deals damage once block runs out.
+    private static int MaxHpLoss(IReadOnlyList<ForecastItem> items, int pool)
+    {
+        int remaining = pool, loss = 0;
+        foreach (var it in items.Where(i => !i.Conditional && i.Blockable && i.Kind == ForecastKind.Dot)
+                                .Concat(items.Where(i => !i.Conditional && i.Blockable && i.Kind == ForecastKind.Attack)))
+        {
+            for (int h = 0; h < it.Hits; h++)
+            {
+                if (it.DamagePerHit <= 0) break;
+                if (it.DamagePerHit > remaining) loss += it.MaxHpPerUnblockedHit;
+                remaining = Math.Max(0, remaining - it.DamagePerHit);
+            }
+        }
+        return loss;
     }
 }

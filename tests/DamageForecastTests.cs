@@ -196,3 +196,35 @@ public class IntentLabelTests
     public void NoNumberIsNull(string? label)
         => Assert.Null(SpireLedger.DamageForecast.ParseIntentLabel(label));
 }
+
+public class MaxHpLossTests
+{
+    private static ForecastResult Run(int block, params ForecastItem[] items) =>
+        DamageForecast.Compute(new ForecastInputs(50, 52, block, 0, false, new List<ForecastItem>(items)));
+
+    private static ForecastItem PaperCuts(int perHit, int hits, int maxHpPerHit) =>
+        new("Scroll", ForecastKind.Attack, hits, perHit, blockable: true, conditional: false, maxHpPerUnblockedHit: maxHpPerHit);
+
+    [Fact]
+    public void FullyBlocked_NoMaxHpLoss()
+        => Assert.Equal(0, Run(25, PaperCuts(14, 1, 2)).MaxHpLoss);
+
+    [Fact]
+    public void EachHitPastBlockCosts()
+    {
+        // 3 hits of 6 against 10 block: the 1st is blocked, the 2nd and 3rd get through -> 2 x 2 max HP.
+        Assert.Equal(4, Run(10, PaperCuts(6, 3, 2)).MaxHpLoss);
+    }
+
+    [Fact]
+    public void BlockableDotEatsBlockFirst()
+    {
+        // Disintegration 6 at end of turn uses 6 of the 8 block, so the 5-damage hit gets through.
+        var dot = new ForecastItem("Disintegration", ForecastKind.Dot, 1, 6, blockable: true, conditional: false);
+        Assert.Equal(2, Run(8, dot, PaperCuts(5, 1, 2)).MaxHpLoss);
+    }
+
+    [Fact]
+    public void ZeroDamageHitsCostNothing()
+        => Assert.Equal(0, Run(0, PaperCuts(0, 2, 2)).MaxHpLoss);
+}

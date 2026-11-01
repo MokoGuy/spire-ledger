@@ -107,6 +107,7 @@ internal static class Loc
         ["ci_hist_runs"] = ("{0} past runs, {1} won ({2}%)", "{0} parties passées, {1} gagnée(s) ({2} %)"),
         ["ci_hist_plays"] = ("played {0}×/run", "jouée {0} fois/partie"),
         ["ci_hist_none"] = ("Never in your past decks", "Jamais dans vos decks passés"),
+        ["max_hp"] = ("max HP", "PV max"),
         ["version_mismatch"] = ("{0} has Spire Ledger {1}, you have {2}: update so you both see the same stats.",
                                 "{0} a Spire Ledger {1}, vous {2} : mettez à jour pour voir les mêmes stats."),
         ["import_menu_button"] = ("Import progress", "Importer une progression"),

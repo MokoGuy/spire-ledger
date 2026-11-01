@@ -160,6 +160,7 @@ internal static class ForecastReader
         if (intents.Count == 0) return false;
 
         string name = SafeName(enemy);
+        int paperCuts = PowerAmount(enemy, "PaperCuts"); // each unblocked attack hit costs that much max HP
         foreach (var intent in intents)
         {
             string tn = intent.GetType().Name;
@@ -171,9 +172,24 @@ internal static class ForecastReader
             if (hits <= 0) hits = 1;
             int perHit = ResolveIntentDamage(intent, enemy);
             if (perHit <= 0) continue; // attack with no readable number → treat as no threat, not hidden
-            items.Add(new ForecastItem(name, ForecastKind.Attack, hits, perHit, blockable: true, conditional: false));
+            items.Add(new ForecastItem(name, ForecastKind.Attack, hits, perHit, blockable: true, conditional: false,
+                                       maxHpPerUnblockedHit: paperCuts));
         }
         return true;
+    }
+
+    // Amount of the creature's power whose type name contains `key` (e.g. PaperCutsPower), else 0.
+    private static int PowerAmount(Creature creature, string key)
+    {
+        try
+        {
+            if (GetProp(creature, "Powers") is not IEnumerable powers) return 0;
+            foreach (var p in powers)
+                if (p != null && p.GetType().Name.Contains(key, StringComparison.OrdinalIgnoreCase))
+                    return Math.Max(0, GetInt(p, "Amount", "Stacks", "Count", "Value"));
+        }
+        catch { }
+        return 0;
     }
 
     // "take ... damage" / "lose ... HP|health" — self-harm, as opposed to attacks that "deal" damage.

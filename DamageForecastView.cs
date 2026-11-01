@@ -176,7 +176,8 @@ internal sealed class DamageForecastView
 
             _vp = _container.GetViewportRect().Size;
             float sc = UiTheme.Scale(_vp) * Math.Clamp(UiScaleMul, 0.5f, 4f);
-            _w = BaseWidth * sc; _h = BaseHeight * sc; _headerH = BaseHeaderH * sc;
+            // One extra line when a permanent max HP loss is shown.
+            _w = BaseWidth * sc; _h = (BaseHeight + (r.MaxHpLoss > 0 ? 18f : 0f)) * sc; _headerH = BaseHeaderH * sc;
             float margin = BaseMargin * sc;
 
             _container.SetSize(new Vector2(_w, _h));
@@ -230,6 +231,9 @@ internal sealed class DamageForecastView
                 ? $"[color=#{GreenHex}]Safe ✓[/color]"
                 : $"[color=#{LossHex}]{lossStr} [font_size={F(15, sc)}]HP[/font_size][/color]{hidden}";
             string line2 = $"[color=#{CreamHex}][font_size={F(13, sc)}]{r.CurrentHp} → [color=#{afterHex}]{after}[/color] {tail}[/font_size][/color]";
+            // Permanent loss (e.g. Paper Cuts): max HP lost on top of the HP, in purple.
+            if (r.MaxHpLoss > 0)
+                line2 += $"\n[color=#C08CFF][font_size={F(13, sc)}]−{r.MaxHpLoss} {Loc.T("max_hp")}[/font_size][/color]";
             UiTheme.Apply(_loss, F(30, sc), UiTheme.Red);
             if (numFont != null)
             {
