@@ -75,7 +75,10 @@ Write-Host "Packaged $zip"
 if ($Publish) {
     git tag "v$Version"
     git push origin HEAD "v$Version"
-    & 'C:\Program Files\GitHub CLI\gh.exe' release create "v$Version" $zip --title "Spire Ledger v$Version" --generate-notes
+    # Hand-written notes in docs/releases/v<version>.md; generated notes would also list upstream commits.
+    $notes = Join-Path $repo "docs\releases\v$Version.md"
+    $notesArgs = if (Test-Path $notes) { @('--notes-file', $notes) } else { @('--generate-notes') }
+    & 'C:\Program Files\GitHub CLI\gh.exe' release create "v$Version" $zip --title "Spire Ledger v$Version" @notesArgs
     if ($LASTEXITCODE -ne 0) { throw 'gh release create failed.' }
     Write-Host "Released v$Version"
 }
