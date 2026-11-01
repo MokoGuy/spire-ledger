@@ -209,6 +209,8 @@ public static partial class DamageChartsMod
             if (root.TryGetProperty("forecast", out var fc) && fc.ValueKind == JsonValueKind.False) _showForecast = false;
             if (root.TryGetProperty("forecast_hotkey", out var fh) && fh.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, fh.GetString());
             if (root.TryGetProperty("bars_hotkey", out var bh) && bh.ValueKind == JsonValueKind.String) SetToggle(ref _barsToggle, bh.GetString());
+            if (root.TryGetProperty("party_hotkey", out var ph) && ph.ValueKind == JsonValueKind.String) SetToggle(ref _partyToggle, ph.GetString());
+            if (root.TryGetProperty("party_hud", out var pm) && pm.ValueKind == JsonValueKind.String) _partyHud = ParsePartyHud(pm.GetString());
             if (root.TryGetProperty("forecast_pos_x_frac", out var fpx) && fpx.TryGetSingle(out var ffx)) _fcPosXFrac = ffx;
             if (root.TryGetProperty("forecast_pos_y_frac", out var fpy) && fpy.TryGetSingle(out var ffy)) _fcPosYFrac = ffy;
             _fcAnchorPlayer = !(root.TryGetProperty("forecast_anchor", out var fan) && fan.ValueKind == JsonValueKind.String && fan.GetString() == "free");
@@ -250,6 +252,8 @@ public static partial class DamageChartsMod
                 ["forecast"] = _showForecast,
                 ["forecast_hotkey"] = _forecastToggle.Spec,
                 ["bars_hotkey"] = _barsToggle.Spec,
+                ["party_hud"] = PartyHudSpec(_partyHud),
+                ["party_hotkey"] = _partyToggle.Spec,
                 ["forecast_pos_x_frac"] = _fcForecastPosRounded().X,
                 ["forecast_pos_y_frac"] = _fcForecastPosRounded().Y,
                 ["forecast_anchor"] = _fcAnchorPlayer ? "player" : "free",
@@ -319,6 +323,8 @@ public static partial class DamageChartsMod
             }
             if (root.TryGetProperty("forecast_hotkey", out var fh2) && fh2.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, fh2.GetString());
             if (root.TryGetProperty("bars_hotkey", out var bh2) && bh2.ValueKind == JsonValueKind.String) SetToggle(ref _barsToggle, bh2.GetString());
+            if (root.TryGetProperty("party_hotkey", out var ph2) && ph2.ValueKind == JsonValueKind.String) SetToggle(ref _partyToggle, ph2.GetString());
+            if (root.TryGetProperty("party_hud", out var pm2) && pm2.ValueKind == JsonValueKind.String) _partyHud = ParsePartyHud(pm2.GetString());
             VfxMoments.Enabled = root.TryGetProperty("vfx_moments", out var vm) && vm.ValueKind == JsonValueKind.True;
         }
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] config reload failed: {ex.Message}"); }
@@ -750,6 +756,7 @@ public static partial class DamageChartsMod
             }
             HandleHotkey();
             HandleToggles();
+            HandlePartyToggle();
             Toast.Tick();
             LedgerScreen.Tick();
             ProgressImport.Tick(SafeIsRunInProgress());
@@ -787,11 +794,13 @@ public static partial class DamageChartsMod
                     {
                         // A game menu/modal/overlay is on top — get out of its way.
                         _bars?.Hide(); _tooltip?.Hide(); _detail?.SetVisible(false); _forecast?.Hide(); _forecastLedger?.Hide();
+                        HidePartyHud();
                     }
                     else if (_detailVisible && _detail != null)
                     {
                         // Full-screen breakdown is up — it takes over; hide the compact bars/tooltip.
                         _bars?.Hide(); _tooltip?.Hide(); _forecast?.Hide(); _forecastLedger?.Hide();
+                        HidePartyHud();
                         _detail.SummaryMode = false; _detail.RecapMode = false; _detail.UiScaleMul = _uiScale;
                         _detail.ShowRunHistory = true;
                         _detail.RunFights = _run.HasData() ? _run.EncounterStats(_localSlot) : null;
@@ -808,10 +817,12 @@ public static partial class DamageChartsMod
                         // splitting enemies (Phrog -> wrigglers) momentarily clear the board, and a sticky
                         // latch there would hide the HUD for the rest of the fight.
                         _bars?.Hide(); _tooltip?.Hide(); _detail?.SetVisible(false); _forecast?.Hide(); _forecastLedger?.Hide();
+                        HidePartyHud();
                     }
                     else
                     {
                         _detail?.SetVisible(false);
+                        UpdatePartyHud();
                         // Forecast first: the compact chart docks against the rect it just drew.
                         if (_showForecast) UpdateForecast(cs);
                         if (_showBars && _bars != null)
@@ -1051,6 +1062,8 @@ public static partial class DamageChartsMod
 
     private static void OnCombatEnd()
     {
+        HidePartyHud();
+        _hitboxes.Clear();
         UnsubscribeAll();
         _pending.Clear();
         ClearShares();
