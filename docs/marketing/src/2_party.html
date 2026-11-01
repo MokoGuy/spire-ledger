@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spire Ledger — party damage</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .shot { left: 740px; top: 262px; --x: 0; --y: 140; --w: 1100; --h: 700; --s: 1.0; }
+  .zoom { left: 82px; top: 262px; --x: 20; --y: 158; --w: 350; --h: 124; --s: 1.75; }
+  .panel { left: 80px; top: 520px; width: 614px; }
+  .brand { left: 82px; right: auto; }
+  .shot .num { position: absolute; }
+</style>
+</head>
+<body>
+  <div class="head"><h1 data-t="h1"></h1><p data-t="sub"></p></div>
+
+  <div class="crop zoom"><img class="cap"></div>
+
+  <div class="panel">
+    <ul class="points">
+      <li><span class="num">1</span><span data-t="p1"></span></li>
+      <li><span class="num">2</span><span data-t="p2"></span></li>
+      <li><span class="num">3</span><span data-t="p3"></span></li>
+    </ul>
+    <p class="note" data-t="note"></p>
+  </div>
+
+  <div class="crop shot"><img class="cap">
+    <div class="ring" style="left:236px; top:20px; width:140px; height:122px"></div>
+    <span class="num" style="left:388px; top:58px">1</span>
+    <div class="ring" style="left:526px; top:34px; width:222px; height:220px"></div>
+    <span class="num" style="left:760px; top:124px">3</span>
+  </div>
+
+  <div class="brand">SPIRE LEDGER</div>
+
+<script>
+  const lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "fr";
+  const T = {
+    fr: {
+      h1: "Voyez qui porte l'équipe, en direct",
+      sub: "En co-op, chacun voit les dégâts de toute l'équipe, combat après combat.",
+      p1: "<b>Dégâts de chaque joueur</b> ce combat, et sa part de l'équipe",
+      p2: "<b>Le poison est crédité</b> à qui l'a posé, au prorata des charges",
+      p3: "<b>Prévision</b> des PV que vous allez perdre, au-dessus de votre personnage",
+      note: "Mêmes chiffres sur les deux PC. Touches N, V et B pour masquer.",
+    },
+    en: {
+      h1: "See who carries the party, live",
+      sub: "In co-op, everyone sees the whole party's damage, fight after fight.",
+      p1: "<b>Each player's damage</b> this fight, and their share of the party",
+      p2: "<b>Poison is credited</b> to whoever applied it, split by stacks",
+      p3: "<b>Forecast</b> of the HP you're about to lose, above your character",
+      note: "Same numbers on both PCs. Press N, V or B to hide.",
+    },
+  }[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach(e => e.innerHTML = T[e.dataset.t]);
+  document.querySelectorAll("img.cap").forEach(i => i.src = `../captures/${lang}/2_party.png`);
+</script>
+</body>
+</html>

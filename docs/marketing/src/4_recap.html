@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spire Ledger — run recap</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .table  { left: 104px; top: 270px; --x: 88;  --y: 222; --w: 1712; --h: 116; --s: 1.0; }
+  .badges { left: 104px; top: 452px; --x: 88;  --y: 244; --w: 300;  --h: 88;  --s: 2.5; }
+  .dealt  { left: 904px; top: 452px; --x: 80;  --y: 352; --w: 838;  --h: 172; --s: 1.09; }
+  .tag { position: absolute; }
+  .cols { position: absolute; left: 80px; right: 80px; top: 740px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  .cols .panel { position: static; padding: 24px 26px; }
+  .cols .points li { font-size: 28px; margin: 0; }
+</style>
+</head>
+<body>
+  <div class="head"><h1 data-t="h1"></h1><p data-t="sub"></p></div>
+
+  <div class="crop table"><img class="cap"></div>
+  <div class="crop zoom badges"><img class="cap"></div>
+  <div class="crop dealt"><img class="cap"></div>
+  <span class="num tag" style="left:84px; top:432px">1</span>
+  <span class="num tag" style="left:84px; top:250px">2</span>
+  <span class="num tag" style="left:884px; top:432px">3</span>
+
+  <div class="cols">
+    <div class="panel"><ul class="points"><li><span class="num">1</span><span data-t="p1"></span></li></ul></div>
+    <div class="panel"><ul class="points"><li><span class="num">2</span><span data-t="p2"></span></li></ul></div>
+    <div class="panel"><ul class="points"><li><span class="num">3</span><span data-t="p3"></span></li></ul></div>
+  </div>
+
+  <div class="brand">SPIRE LEDGER</div>
+
+<script>
+  const lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "fr";
+  const T = {
+    fr: {
+      h1: "Les chiffres derrière chaque badge",
+      sub: "Au game over, le récap montre ce que chaque joueur a vraiment fait.",
+      p1: "<b>Les badges de chacun</b>, avec les chiffres qui les expliquent",
+      p2: "<b>10 stats par joueur</b> : dégâts, débuffs, armure, cartes, énergie…",
+      p3: "<b>D'où viennent les dégâts</b>, infligés et subis, carte par carte",
+    },
+    en: {
+      h1: "The numbers behind every badge",
+      sub: "At game over, the recap shows what each player really did.",
+      p1: "<b>Everyone's badges</b>, with the numbers that earned them",
+      p2: "<b>10 stats per player</b>: damage, debuffs, block, cards, energy…",
+      p3: "<b>Where the damage came from</b>, dealt and taken, card by card",
+    },
+  }[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach(e => e.innerHTML = T[e.dataset.t]);
+  document.querySelectorAll("img.cap").forEach(i => i.src = `../captures/${lang}/4_recap.png`);
+</script>
+</body>
+</html>

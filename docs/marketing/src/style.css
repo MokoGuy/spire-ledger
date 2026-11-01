@@ -1,0 +1,69 @@
+/* Shared look for the Workshop/GitHub images: the game's palette and its Kreon font. */
+@font-face { font-family: "Kreon"; src: url("../fonts/Kreon.ttf") format("truetype"); font-weight: 300 700; }
+
+:root {
+  --gold: #efc851;
+  --cream: #fff6e2;
+  --muted: #b9b2a0;
+  --slate: #141c22;
+  --slate-2: #1d2830;
+  --edge: #3a4a55;
+  --red: #e0533f;
+}
+
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; }
+body {
+  font-family: "Kreon", serif;
+  color: var(--cream);
+  background:
+    radial-gradient(ellipse at 70% 40%, #22323b 0%, transparent 60%),
+    linear-gradient(180deg, #0f171c 0%, #0a1014 100%);
+  position: relative;
+}
+
+.brand {
+  position: absolute; right: 56px; bottom: 34px;
+  font-size: 26px; font-weight: 700; letter-spacing: 3px; color: var(--gold); opacity: .85;
+}
+
+.head { position: absolute; left: 80px; top: 58px; right: 80px; }
+.head h1 {
+  font-size: 66px; font-weight: 700; letter-spacing: 1.5px; line-height: 1.05;
+  color: var(--gold); text-transform: uppercase;
+  text-shadow: 0 3px 0 #5a3d0c, 0 6px 18px rgba(0,0,0,.6);
+}
+.head p { margin-top: 16px; font-size: 30px; font-weight: 400; color: var(--cream); opacity: .92; max-width: 1500px; }
+
+/* A crop of a 1920x1080 game capture: --x/--y/--w/--h in source pixels, --s the scale. */
+.crop {
+  position: absolute; overflow: hidden;
+  width: calc(var(--w) * var(--s) * 1px); height: calc(var(--h) * var(--s) * 1px);
+  border: 2px solid var(--edge); border-radius: 14px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.65);
+}
+.crop img {
+  position: absolute; width: calc(1920px * var(--s)); height: calc(1080px * var(--s));
+  left: calc(var(--x) * var(--s) * -1px); top: calc(var(--y) * var(--s) * -1px);
+}
+.crop.zoom { border: 3px solid var(--gold); box-shadow: 0 0 0 6px rgba(239,200,81,.18), 0 18px 50px rgba(0,0,0,.7); }
+
+/* Gold ring placed in a crop's coordinates (source pixels). */
+.ring {
+  position: absolute; border: 3px solid var(--gold); border-radius: 10px;
+  box-shadow: 0 0 22px rgba(239,200,81,.55);
+}
+
+.panel {
+  position: absolute; background: linear-gradient(180deg, var(--slate-2), var(--slate));
+  border: 2px solid var(--edge); border-radius: 14px; padding: 26px 30px;
+}
+.points { list-style: none; padding: 0; }
+.points li { display: flex; gap: 18px; align-items: baseline; font-size: 29px; line-height: 1.25; margin: 0 0 20px; }
+.points li:last-child { margin-bottom: 0; }
+.num {
+  flex: none; width: 40px; height: 40px; border-radius: 50%; display: inline-grid; place-items: center;
+  background: var(--gold); color: #2a1d05; font-weight: 700; font-size: 25px; transform: translateY(4px);
+}
+.points b { color: var(--gold); font-weight: 700; }
+.note { margin-top: 22px; font-size: 22px; color: var(--muted); }

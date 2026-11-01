@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spire Ledger — card choices</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .shot { left: 730px; top: 262px; --x: 440; --y: 230; --w: 1040; --h: 650; --s: 1.07; }
+  .shot .ring { left: 28px; top: 595px; width: 310px; height: 87px; }
+  .zoom { left: 140px; top: 262px; --x: 470; --y: 790; --w: 282; --h: 72; --s: 1.97; }
+  .chip { position: absolute; left: 82px; }
+  .panel { left: 80px; top: 470px; width: 614px; }
+  .brand { left: 82px; right: auto; }
+</style>
+</head>
+<body>
+  <div class="head"><h1 data-t="h1"></h1><p data-t="sub"></p></div>
+
+  <div class="crop zoom"><img class="cap"></div>
+  <span class="num chip" style="top:280px">1</span>
+  <span class="num chip" style="top:326px">2</span>
+  <span class="num chip" style="top:370px">3</span>
+
+  <div class="panel">
+    <ul class="points">
+      <li><span class="num">1</span><span data-t="p1"></span></li>
+      <li><span class="num">2</span><span data-t="p2"></span></li>
+      <li><span class="num">3</span><span data-t="p3"></span></li>
+    </ul>
+    <p class="note" data-t="note"></p>
+  </div>
+
+  <div class="crop shot"><img class="cap"><div class="ring"></div></div>
+
+  <div class="brand">SPIRE LEDGER</div>
+
+<script>
+  const lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "fr";
+  const T = {
+    fr: {
+      h1: "Choisissez vos cartes en connaissance de cause",
+      sub: "Sous chaque carte proposée, Spire Ledger affiche ce que vous savez déjà d'elle.",
+      p1: "<b>Copies dans votre deck</b>, améliorées comprises",
+      p2: "<b>Jouée cette partie</b> : combien de fois vous l'avez lancée",
+      p3: "<b>Votre historique</b> : parties finies avec elle dans le deck, et combien gagnées",
+      note: "Calculé sur toutes vos parties, même celles jouées sans le mod. Aussi en boutique.",
+    },
+    en: {
+      h1: "Pick cards with your own stats",
+      sub: "Under every card offered, Spire Ledger shows what you already know about it.",
+      p1: "<b>Copies in your deck</b>, upgraded ones included",
+      p2: "<b>Played this run</b>: how many times you've played it",
+      p3: "<b>Your history</b>: past runs that ended with it in your deck, and how many you won",
+      note: "Built from all your runs, even those played without the mod. Shops too.",
+    },
+  }[lang];
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach(e => e.innerHTML = T[e.dataset.t]);
+  document.querySelectorAll("img.cap").forEach(i => i.src = `../captures/${lang}/1_cards.png`);
+</script>
+</body>
+</html>

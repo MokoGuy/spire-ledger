@@ -1,0 +1,35 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Spire Ledger — main image</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /* Square Workshop main image (1080x1080, shown down to ~200 px): name, one card with its stats,
+     the party damage and the forecast. Few, big elements. */
+  html, body { width: 1080px; height: 1080px; }
+  .title { position: absolute; left: 0; right: 0; top: 54px; text-align: center; }
+  .title h1 {
+    font-size: 132px; font-weight: 700; letter-spacing: 6px; line-height: 1; color: var(--gold);
+    text-shadow: 0 4px 0 #5a3d0c, 0 10px 30px rgba(0,0,0,.7);
+  }
+  .title p { margin-top: 14px; font-size: 38px; letter-spacing: 3px; color: var(--cream); text-transform: uppercase; }
+  .card  { left: 60px;  top: 300px; --x: 464; --y: 438; --w: 290; --h: 428; --s: 1.6; }
+  .party { left: 600px; top: 420px; --x: 20;  --y: 158; --w: 350; --h: 124; --s: 1.2; }
+  .fc    { left: 600px; top: 650px; --x: 532; --y: 280; --w: 210; --h: 108; --s: 2.0; }
+  .card .ring { left: 6px; top: 568px; width: 452px; height: 112px; }
+</style>
+</head>
+<body>
+  <div class="title"><h1>SPIRE LEDGER</h1><p data-t="sub"></p></div>
+  <div class="crop card"><img data-cap="1_cards"><div class="ring"></div></div>
+  <div class="crop zoom party"><img data-cap="2_party"></div>
+  <div class="crop zoom fc"><img data-cap="2_party"></div>
+<script>
+  const lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "fr";
+  const T = { fr: { sub: "Stats co-op · Slay the Spire 2" }, en: { sub: "Co-op stats · Slay the Spire 2" } }[lang];
+  document.querySelectorAll("[data-t]").forEach(e => e.innerHTML = T[e.dataset.t]);
+  document.querySelectorAll("img[data-cap]").forEach(i => i.src = `../captures/${lang}/${i.dataset.cap}.png`);
+</script>
+</body>
+</html>
