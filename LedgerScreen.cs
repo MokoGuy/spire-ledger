@@ -24,6 +24,9 @@ internal static class LedgerScreen
     private static CanvasLayer? _layer;
     private static Control? _root;
     private static readonly List<(Rect2 Rect, Action OnClick)> _hits = new();
+    private static readonly List<(Rect2 Rect, string Text)> _tips = new();   // hover names of icons
+    private static PanelContainer? _tip;
+    private static Label? _tipLabel;
     private static List<JsonObject> _all = new();   // every recorded run, newest first
     private static List<JsonObject> _runs = new();  // _all filtered by the selected teammate
     private static string? _mate;                   // teammate key (sorted net ids) or null for all runs
@@ -127,14 +130,15 @@ internal static class LedgerScreen
             if (esc && !_escWasDown) { Close(); _escWasDown = true; return; }
             _escWasDown = esc;
 
+            var mouse = _root.GetViewport().GetMousePosition();
             bool down = Input.IsMouseButtonPressed(MouseButton.Left);
             if (down && !_mouseWasDown)
             {
-                var pos = _root.GetViewport().GetMousePosition();
                 foreach (var (rect, onClick) in _hits.ToList())
-                    if (rect.HasPoint(pos)) { onClick(); break; }
+                    if (rect.HasPoint(mouse)) { onClick(); break; }
             }
             _mouseWasDown = down;
+            UpdateTip(mouse);
         }
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] Ledger tick: {ex.Message}"); }
     }
@@ -144,6 +148,8 @@ internal static class LedgerScreen
         if (_layer == null) return;
         _root?.QueueFree();
         _hits.Clear();
+        _tips.Clear();
+        _tip = null; _tipLabel = null;
         var vp = _layer.GetViewport().GetVisibleRect().Size;
         _s = UiTheme.Scale(vp);
         _root = new Control { MouseFilter = Control.MouseFilterEnum.Stop };
@@ -303,14 +309,20 @@ internal static class LedgerScreen
         }
 
         // The local player's final relics and deck, from the game's history file of this run.
+        // Icons with their name on hover; text when the game has no art for them.
         if (FinalBuild(run) is HistRun fb)
         {
-            ry += 6f * _s;
-            string relics = string.Join(", ", fb.Relics.Select(GameNames.Relic));
-            ry += Wrapped(Loc.T("final_relics", fb.Relics.Count, relics), 13, UiTheme.Cream, x, ry, width, 2) + 4f * _s;
-            string deck = string.Join(", ", BuildStats.GroupDeck(fb.Deck).Select(g =>
-                GameNames.Card(g.Id) + (g.Copies > 1 ? $" ×{g.Copies}" : "") + (g.Upgraded == 0 ? "" : g.Upgraded == g.Copies ? "+" : $" ({g.Upgraded}+)")));
-            ry += Wrapped(Loc.T("final_deck", fb.Deck.Count, deck), 13, UiTheme.Cream, x, ry, width, 3);
+            ry += 8f * _s;
+            Text(Loc.T("final_relics_n", fb.Relics.Count), 12, Dim, bold: true).Position = new Vector2(x, ry);
+            ry += 18f * _s;
+            ry += IconGrid(x, ry, width, fb.Relics.Select(id => (GameNames.RelicArt(id), GameNames.Relic(id), "", false)).ToList(),
+                           new Vector2(30f, 30f) * _s, maxRows: 2) + 8f * _s;
+            Text(Loc.T("final_deck_n", fb.Deck.Count), 12, Dim, bold: true).Position = new Vector2(x, ry);
+            ry += 18f * _s;
+            ry += IconGrid(x, ry, width, BuildStats.GroupDeck(fb.Deck).Select(g =>
+                    (GameNames.CardArt(g.Id), GameNames.Card(g.Id) + (g.Upgraded > 0 ? $" ({g.Upgraded}+)" : ""),
+                     g.Copies > 1 ? $"×{g.Copies}" : "", g.Upgraded > 0)).ToList(),
+                           new Vector2(52f, 38f) * _s, maxRows: 3);
         }
 
         // Fights, newest last; as many as fit.
@@ -409,15 +421,31 @@ internal static class LedgerScreen
         Chip(sx, top - 4f * _s, rate, _bSort == BuildSort.BestWinRate, () => { _bSort = BuildSort.BestWinRate; _bPage = 0; Rebuild(); });
         Text(Loc.T("b_source"), 12, Dim).Position = new Vector2(x, top + 28f * _s);
 
+        // Highlights: favorite (most taken), lucky (best win rate) and cursed (worst) card and relic.
+        int minRuns = BuildStats.HighlightMinRuns(sum.Runs);
+        var tiles = new (string Title, KeyValuePair<string, Tally>? Pick, bool Card, Color Accent)[]
+        {
+            (Loc.T("hl_fav_card"), BuildStats.Favorite(sum.Cards), true, UiTheme.Gold),
+            (Loc.T("hl_fav_relic"), BuildStats.Favorite(sum.Relics), false, UiTheme.Gold),
+            (Loc.T("hl_best_card"), BuildStats.Best(sum.Cards, minRuns), true, Green),
+            (Loc.T("hl_best_relic"), BuildStats.Best(sum.Relics, minRuns), false, Green),
+            (Loc.T("hl_worst_card"), BuildStats.Worst(sum.Cards, minRuns), true, UiTheme.Red),
+            (Loc.T("hl_worst_relic"), BuildStats.Worst(sum.Relics, minRuns), false, UiTheme.Red),
+        };
+        float tileTop = top + 54f * _s, tileH = 74f * _s, tileGap = 12f * _s;
+        float tileW = (width - tileGap * (tiles.Length - 1)) / tiles.Length;
+        for (int i = 0; i < tiles.Length; i++)
+            Highlight(x + i * (tileW + tileGap), tileTop, tileW, tileH, tiles[i].Title, tiles[i].Pick, tiles[i].Card, tiles[i].Accent, minRuns);
+
         // Three columns: characters (over the whole party filter, so another one can be picked), relics, cards.
-        float colTop = top + 62f * _s, gap = 36f * _s, rowH = 26f * _s;
+        float colTop = tileTop + tileH + 20f * _s, gap = 36f * _s, rowH = RowH;
         float charW = width * 0.2f, relicW = (width - charW - gap * 2f) * 0.45f;
         float cardW = width - charW - relicW - gap * 2f;
         float listTop = colTop + 46f * _s;
         int fit = Math.Max(1, (int)((y + height - listTop - 44f * _s) / rowH));
 
         var chars = partySum.Characters.OrderByDescending(kv => kv.Value.Runs).Take(fit).ToList();
-        Column(x, colTop, charW, Loc.T("b_characters"), chars, partySum.WinRate, GameNames.Character, picks: false,
+        Column(x, colTop, charW, Loc.T("b_characters"), chars, partySum.WinRate, GameNames.Character, GameNames.CharacterArt, false, picks: false,
                onClick: id => SetBuildFilter(_bChar == id ? null : id, _bParty), selected: _bChar);
 
         var relics = BuildStats.Rank(sum.Relics, _bSort);
@@ -426,9 +454,9 @@ internal static class LedgerScreen
         _bPage = Math.Clamp(_bPage, 0, pages - 1);
         float rx = x + charW + gap, kx = rx + relicW + gap;
         Column(rx, colTop, relicW, Loc.T("b_relics", relics.Count), relics.Skip(_bPage * fit).Take(fit).ToList(),
-               BuildStats.PooledRate(sum.Relics.Values), GameNames.Relic, picks: false);
+               BuildStats.PooledRate(sum.Relics.Values), GameNames.Relic, GameNames.RelicArt, false, picks: false);
         Column(kx, colTop, cardW, Loc.T("b_cards", cards.Count), cards.Skip(_bPage * fit).Take(fit).ToList(),
-               BuildStats.PooledRate(sum.Cards.Values), GameNames.Card, picks: true);
+               BuildStats.PooledRate(sum.Cards.Values), GameNames.Card, GameNames.CardArt, true, picks: true);
         if (pages > 1)
         {
             float py = listTop + fit * rowH + 6f * _s;
@@ -447,7 +475,8 @@ internal static class LedgerScreen
     // One ranked list: name, runs, win rate (green/red when 10 points above/below `baseline`, the filter's
     // overall rate, with a small bar), and for cards how often they were picked when offered.
     private static void Column(float x, float y, float width, string title, List<KeyValuePair<string, Tally>> rows, double baseline,
-                               Func<string, string> name, bool picks, Action<string>? onClick = null, string? selected = null)
+                               Func<string, string> name, Func<string, Texture2D?> art, bool landscape, bool picks,
+                               Action<string>? onClick = null, string? selected = null)
     {
         Text(title, 15, UiTheme.Gold, bold: true).Position = new Vector2(x, y);
         float winX = x + width - 120f * _s, runsX = winX - 80f * _s, pickX = runsX - 100f * _s;
@@ -455,7 +484,10 @@ internal static class LedgerScreen
         Text(Loc.T("b_runs_col"), 11, Dim, bold: true).Position = new Vector2(runsX, capY);
         Text(Loc.T("b_win_col"), 11, Dim, bold: true).Position = new Vector2(winX, capY);
         if (picks) Text(Loc.T("b_pick_col"), 11, Dim, bold: true).Position = new Vector2(pickX, capY);
-        float rowH = 26f * _s, ry = y + 46f * _s, nameW = (picks ? pickX : runsX) - x - 10f * _s;
+        float rowH = RowH, ry = y + 46f * _s;
+        // Small art before the name: card portraits are landscape, relic/character icons square.
+        var artSize = (landscape ? new Vector2(32f, 24f) : new Vector2(24f, 24f)) * _s;
+        float nameX = x + artSize.X + 8f * _s, nameW = (picks ? pickX : runsX) - nameX - 10f * _s;
         foreach (var (id, t) in rows)
         {
             bool sel = selected != null && selected == id;
@@ -466,38 +498,131 @@ internal static class LedgerScreen
                 string cid = id;
                 _hits.Add((rect, () => onClick(cid)));
             }
+            Icon(art(id), new Vector2(x, ry + (rowH - artSize.Y) / 2f - 2f * _s), artSize, null, landscape);
             var n = Text(name(id), 14, sel ? UiTheme.Gold : UiTheme.Cream);
-            n.Position = new Vector2(x, ry); n.ClipText = true; n.Size = new Vector2(nameW, rowH);
-            if (picks && t.Offered > 0) Text($"{t.Picked}/{t.Offered}", 14, Dim, numeric: true).Position = new Vector2(pickX, ry);
-            Text(t.Runs.ToString(), 14, UiTheme.Cream, numeric: true).Position = new Vector2(runsX, ry);
+            n.Position = new Vector2(nameX, ry + 1f * _s); n.ClipText = true; n.Size = new Vector2(nameW, rowH);
+            if (picks && t.Offered > 0) Text($"{t.Picked}/{t.Offered}", 14, Dim, numeric: true).Position = new Vector2(pickX, ry + 1f * _s);
+            Text(t.Runs.ToString(), 14, UiTheme.Cream, numeric: true).Position = new Vector2(runsX, ry + 1f * _s);
             var verdict = t.Runs < BuildStats.MinRunsForRate ? Dim
                 : t.WinRate >= baseline + 0.1 ? Green : t.WinRate <= baseline - 0.1 ? UiTheme.Red : UiTheme.Cream;
-            _root!.AddChild(new ColorRect { Color = new Color(verdict, 0.28f), Position = new Vector2(winX, ry + 4f * _s), Size = new Vector2(Math.Max(2f, 100f * _s * (float)t.WinRate), rowH - 10f * _s) });
-            Text(Loc.T("pct", Pct(t.WinRate)), 14, verdict, numeric: true).Position = new Vector2(winX + 6f * _s, ry);
+            _root!.AddChild(new ColorRect { Color = new Color(verdict, 0.28f), Position = new Vector2(winX, ry + 5f * _s), Size = new Vector2(Math.Max(2f, 100f * _s * (float)t.WinRate), rowH - 12f * _s) });
+            Text(Loc.T("pct", Pct(t.WinRate)), 14, verdict, numeric: true).Position = new Vector2(winX + 6f * _s, ry + 1f * _s);
             ry += rowH;
         }
+    }
+
+    private static float RowH => 30f * _s;
+
+    // One highlight tile: its title, then the item's art, name, runs and win rate.
+    private static void Highlight(float x, float y, float w, float h, string title, KeyValuePair<string, Tally>? pick, bool card, Color accent, int minRuns)
+    {
+        var panel = UiTheme.MakePanel(0.9f, _s);
+        panel.Position = new Vector2(x, y); panel.Size = new Vector2(w, h);
+        _root!.AddChild(panel);
+        _root.AddChild(new ColorRect { Color = accent, Position = new Vector2(x, y), Size = new Vector2(4f * _s, h) });
+        float pad = 12f * _s;
+        Text(title.ToUpperInvariant(), 11, accent, bold: true).Position = new Vector2(x + pad, y + 7f * _s);
+        if (pick is not KeyValuePair<string, Tally> kv)
+        {
+            Text(Loc.T("hl_none", minRuns), 12, Dim).Position = new Vector2(x + pad, y + 32f * _s);
+            return;
+        }
+        string id = kv.Key, name = card ? GameNames.Card(id) : GameNames.Relic(id);
+        var art = (card ? new Vector2(56f, 42f) : new Vector2(42f, 42f)) * _s;
+        Icon(card ? GameNames.CardArt(id) : GameNames.RelicArt(id), new Vector2(x + pad, y + 26f * _s), art, name, card);
+        float tx = x + pad + art.X + 10f * _s, tw = x + w - tx - 8f * _s;
+        var n = Text(name, 15, UiTheme.Cream, bold: true);
+        n.Position = new Vector2(tx, y + 26f * _s); n.ClipText = true; n.Size = new Vector2(tw, 22f * _s);
+        var d = Text(Loc.T("hl_detail", kv.Value.Runs, Pct(kv.Value.WinRate)), 12, Dim);
+        d.Position = new Vector2(tx, y + 48f * _s); d.ClipText = true; d.Size = new Vector2(tw, 20f * _s);
+    }
+
+    // A small game texture (card art covers its box, icons keep their shape); `tip` shows on hover.
+    private static void Icon(Texture2D? tex, Vector2 pos, Vector2 size, string? tip, bool cover)
+    {
+        if (tex == null) return;
+        // ExpandMode before Size: until then the texture's own size is the minimum and wins.
+        var r = new TextureRect
+        {
+            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+            StretchMode = cover ? TextureRect.StretchModeEnum.KeepAspectCovered : TextureRect.StretchModeEnum.KeepAspectCentered,
+            MouseFilter = Control.MouseFilterEnum.Ignore, Texture = tex,
+        };
+        _root!.AddChild(r);
+        r.Position = pos; r.Size = size;
+        if (tip != null) _tips.Add((new Rect2(pos, size), tip));
+    }
+
+    // Items as a wrapping grid of small art (name on hover; the name as text when there is no art), with an
+    // optional count ("×2") and a gold border when upgraded. Returns the grid's height.
+    private static float IconGrid(float x, float y, float width, List<(Texture2D? Tex, string Name, string Count, bool Upgraded)> items,
+                                  Vector2 size, int maxRows)
+    {
+        float gap = 6f * _s, cx = x, cy = y;
+        int row = 0;
+        bool card = size.X > size.Y;
+        foreach (var (tex, name, count, upgraded) in items)
+        {
+            float w = tex != null ? size.X : Math.Min(width, ChipWidth(name) - 20f * _s);
+            if (cx > x && cx + w > x + width)
+            {
+                if (++row >= maxRows) { Text("…", 16, Dim, bold: true).Position = new Vector2(cx - gap - 4f * _s, cy); break; }
+                cx = x; cy += size.Y + gap;
+            }
+            if (card) _root!.AddChild(new ColorRect { Color = upgraded ? UiTheme.Gold : new Color(0f, 0f, 0f, 0.6f), Position = new Vector2(cx - 1f * _s, cy - 1f * _s), Size = new Vector2(w, size.Y) + Vector2.One * 2f * _s });
+            if (tex != null) Icon(tex, new Vector2(cx, cy), size, name, card);
+            else
+            {
+                var l = Text(name, 12, UiTheme.Cream);
+                l.Position = new Vector2(cx, cy + 4f * _s); l.ClipText = true; l.Size = new Vector2(w, size.Y);
+            }
+            if (count.Length > 0)
+            {
+                var c = Text(count, 13, UiTheme.Cream, bold: true);
+                c.AddThemeColorOverride("font_outline_color", Colors.Black);
+                c.AddThemeConstantOverride("outline_size", Math.Max(2, (int)(4 * _s)));
+                c.Position = new Vector2(cx + w - 24f * _s, cy + size.Y - 20f * _s);
+            }
+            cx += w + gap;
+        }
+        return items.Count == 0 ? 0f : cy - y + size.Y;
+    }
+
+    // The hover name of the icon under the mouse, drawn above everything else.
+    private static void UpdateTip(Vector2 mouse)
+    {
+        string? text = null;
+        foreach (var (rect, t) in _tips) if (rect.HasPoint(mouse)) { text = t; break; }
+        if (text == null) { if (_tip != null) _tip.Visible = false; return; }
+        if (_tip == null || !GodotObject.IsInstanceValid(_tip))
+        {
+            _tip = new PanelContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+            _tip.AddThemeStyleboxOverride("panel", new StyleBoxFlat
+            {
+                BgColor = new Color(0.05f, 0.06f, 0.09f, 0.96f), BorderColor = new Color(UiTheme.Gold, 0.6f),
+                BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderWidthBottom = 1,
+                ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 5, ContentMarginBottom = 5,
+            });
+            _tipLabel = UiTheme.MakeLabel(Math.Max(8, (int)Math.Round(15 * _s)), UiTheme.Cream);
+            if (GameAssets.Enabled && GameAssets.KreonBold is Font f) _tipLabel.AddThemeFontOverride("font", f);
+            _tip.AddChild(_tipLabel);
+            _root!.AddChild(_tip);
+        }
+        _tipLabel!.Text = text;
+        _tip.Visible = true;
+        _tip.ResetSize();
+        var vp = _root!.GetViewport().GetVisibleRect().Size;
+        var pos = mouse + new Vector2(16f, 20f) * _s;
+        pos.X = Math.Min(pos.X, vp.X - _tip.Size.X - 8f);
+        pos.Y = Math.Min(pos.Y, vp.Y - _tip.Size.Y - 8f);
+        _tip.Position = pos;
+        _tip.MoveToFront();
     }
 
     private static int Pct(double rate) => (int)Math.Round(rate * 100);
 
     private static readonly Color Green = new(0.45f, 0.85f, 0.45f);
 
-    // A word-wrapped label of at most `maxLines` lines; returns its height.
-    private static float Wrapped(string text, int size, Color color, float x, float y, float width, int maxLines)
-    {
-        var l = Text(text, size, color);
-        l.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-        l.MaxLinesVisible = maxLines;
-        l.TextOverrunBehavior = TextServer.OverrunBehavior.TrimEllipsis;
-        l.Position = new Vector2(x, y);
-        l.Size = new Vector2(width, 0f);
-        // A wrapped label with an overrun mode has a 1 px minimum height and draws only the lines that fit
-        // its size, so give it the height of its lines.
-        int lines = Math.Clamp(l.GetLineCount(), 1, maxLines);
-        float h = lines * l.GetLineHeight() + (lines - 1) * l.GetThemeConstant("line_spacing");
-        l.Size = new Vector2(width, h);
-        return h;
-    }
 
     // ===== Data helpers =====
 

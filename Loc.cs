@@ -150,8 +150,16 @@ internal static class Loc
         ["b_pick_col"] = ("PICKED", "CHOISIE"),
         ["b_none"] = ("No finished run in the game's history yet.", "Aucune partie terminée dans l'historique du jeu."),
         ["pct"] = ("{0}%", "{0} %"),
-        ["final_relics"] = ("Relics ({0}): {1}", "Reliques ({0}) : {1}"),
-        ["final_deck"] = ("Final deck ({0}): {1}", "Deck final ({0}) : {1}"),
+        ["final_relics_n"] = ("YOUR RELICS ({0})", "VOS RELIQUES ({0})"),
+        ["final_deck_n"] = ("YOUR FINAL DECK ({0})", "VOTRE DECK FINAL ({0})"),
+        ["hl_fav_card"] = ("Favorite card", "Carte favorite"),
+        ["hl_fav_relic"] = ("Favorite relic", "Relique favorite"),
+        ["hl_best_card"] = ("Lucky card", "Carte porte-bonheur"),
+        ["hl_best_relic"] = ("Lucky relic", "Relique porte-bonheur"),
+        ["hl_worst_card"] = ("Cursed card", "Carte maudite"),
+        ["hl_worst_relic"] = ("Cursed relic", "Relique maudite"),
+        ["hl_detail"] = ("{0} runs · {1}% wins", "{0} parties · {1} % de victoires"),
+        ["hl_none"] = ("not enough runs ({0}+)", "pas assez de parties ({0}+)"),
     };
 
     public static bool French

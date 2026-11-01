@@ -93,6 +93,24 @@ public class BuildStatsTests
     }
 
     [Fact]
+    public void PicksFavoriteBestAndWorst()
+    {
+        var d = new System.Collections.Generic.Dictionary<string, Tally>
+        {
+            ["A"] = new Tally { Runs = 10, Wins = 5 },
+            ["B"] = new Tally { Runs = 4, Wins = 4 },
+            ["C"] = new Tally { Runs = 2, Wins = 2 },  // perfect but too few runs
+            ["D"] = new Tally { Runs = 6, Wins = 1 },
+        };
+        Assert.Equal("A", BuildStats.Favorite(d)!.Value.Key);
+        Assert.Equal("B", BuildStats.Best(d, 3)!.Value.Key);
+        Assert.Equal("D", BuildStats.Worst(d, 3)!.Value.Key);
+        Assert.Null(BuildStats.Best(d, 20));
+        Assert.Equal(3, BuildStats.HighlightMinRuns(12));
+        Assert.Equal(14, BuildStats.HighlightMinRuns(136));
+    }
+
+    [Fact]
     public void GroupsDeckCopies()
     {
         var deck = BuildStats.Parse(Run(true), 1)!.Deck;

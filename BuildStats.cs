@@ -123,6 +123,22 @@ internal static class BuildStats
             .ThenBy(kv => kv.Key, StringComparer.Ordinal).ToList();
     }
 
+    // Highlights need more than the 3 runs of a ranking: at least a tenth of the runs shown.
+    public static int HighlightMinRuns(int totalRuns) => Math.Max(MinRunsForRate, (int)Math.Ceiling(totalRuns * 0.1));
+
+    // The most taken entry (favorite), and the best / worst win rate among entries with enough runs (on equal
+    // rates the one seen in more runs, the surer verdict). Null when nothing qualifies.
+    public static KeyValuePair<string, Tally>? Favorite(Dictionary<string, Tally> d)
+        => Rank(d, BuildSort.MostTaken).Select(kv => (KeyValuePair<string, Tally>?)kv).FirstOrDefault();
+
+    public static KeyValuePair<string, Tally>? Best(Dictionary<string, Tally> d, int minRuns)
+        => d.Where(kv => kv.Value.Runs >= minRuns).OrderByDescending(kv => kv.Value.WinRate).ThenByDescending(kv => kv.Value.Runs)
+            .ThenBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => (KeyValuePair<string, Tally>?)kv).FirstOrDefault();
+
+    public static KeyValuePair<string, Tally>? Worst(Dictionary<string, Tally> d, int minRuns)
+        => d.Where(kv => kv.Value.Runs >= minRuns).OrderBy(kv => kv.Value.WinRate).ThenByDescending(kv => kv.Value.Runs)
+            .ThenBy(kv => kv.Key, StringComparer.Ordinal).Select(kv => (KeyValuePair<string, Tally>?)kv).FirstOrDefault();
+
     // Wins over runs of a whole list. Relics and cards pile up in long runs, so the runs that have any given
     // one are more often won than runs overall; an entry is better than its peers when it beats this pooled
     // rate, not the overall one.

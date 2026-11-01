@@ -21,7 +21,8 @@
 - **Builds** (Ledger tab) — from the game's own run history, so every finished run counts, with or
   without the mod: your win rate per character, and per relic and card (in how many of your final builds
   it was, how many of those you won, and for cards how often you picked them when offered). Filter by
-  character and solo / co-op; sort by most taken or best win rate.
+  character and solo / co-op; sort by most taken or best win rate. Highlights: favorite, lucky and cursed card and relic.
+  Cards, relics and characters show the game's own art (name on hover); a run's final deck is a grid of cards.
 - **Card choices** (rewards, "choose a card", shop): under each offered card, how many copies are already
   in your deck (and upgraded), how often you played it this run, and its history — in how many of your
   past runs it was in your final deck and how many you won (from the game's own run history, so runs

@@ -113,6 +113,29 @@ internal static class GameNames
         return _cache[key] = string.IsNullOrWhiteSpace(text) ? Pretty(id) : text!;
     }
 
+    // The game's own art, small in the Ledger so items are recognized at a glance: a card's portrait
+    // (CardModel.PortraitPath, beta art as fallback), a relic's icon, a character's top-panel icon.
+    public static Texture2D? CardArt(string id)
+    {
+        try
+        {
+            var card = ModelDb.GetByIdOrNull<CardModel>(new ModelId("CARD", id));
+            if (card == null) return null;
+            return GameAssets.Texture(card.PortraitPath) ?? GameAssets.Texture(card.BetaPortraitPath);
+        }
+        catch { return null; }
+    }
+
+    public static Texture2D? RelicArt(string id)
+    {
+        object? model = null;
+        try { model = ModelDb.GetByIdOrNull<RelicModel>(new ModelId("RELIC", id)); } catch { }
+        return GameAssets.RelicIcon(model ?? id);
+    }
+
+    public static Texture2D? CharacterArt(string id)
+        => GameAssets.Texture($"res://images/ui/top_panel/character_icon_{id.ToLowerInvariant()}.png");
+
     // "ODDLY_SMOOTH_STONE" -> "Oddly Smooth Stone" when the game has no title for it (removed content).
     private static string Pretty(string id)
         => string.Join(" ", id.Split('_', StringSplitOptions.RemoveEmptyEntries)
