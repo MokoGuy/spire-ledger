@@ -8,12 +8,12 @@ using MegaCrit.Sts2.Core.Entities.Players;
 namespace SpireLedger;
 
 // Co-op party HUD: each player's damage dealt this fight (and share of the party's), always visible in
-// combat — next to each player's entry in the game's party list (top left, the default) or above each
-// player's character. The party hotkey (config "party_hotkey", default N) cycles list → above
-// characters → hidden; the choice is saved as "party_hud". Solo runs show nothing.
+// combat, next to each player's entry in the game's party list (top left). The party hotkey (config
+// "party_hotkey", default N) shows/hides it; saved as "party_hud" ("list" / "off"). Solo runs show
+// nothing. (Above the characters is where the forecast now docks, so the HUD stays in the list.)
 public static partial class DamageChartsMod
 {
-    private enum PartyHudMode { List, Characters, Off }
+    private enum PartyHudMode { List, Off }
 
     private static PartyHudMode _partyHud = PartyHudMode.List;
     private static (Key Key, List<Key> Mods, string Spec, bool Down) _partyToggle = (Key.N, new(), "n", false);
@@ -34,29 +34,14 @@ public static partial class DamageChartsMod
         public PropertyInfoCache(System.Reflection.PropertyInfo? p) { Prop = p; }
     }
 
-    private static string PartyHudSpec(PartyHudMode m) => m switch
-    {
-        PartyHudMode.Characters => "characters",
-        PartyHudMode.Off => "off",
-        _ => "list",
-    };
+    private static string PartyHudSpec(PartyHudMode m) => m == PartyHudMode.Off ? "off" : "list";
 
-    private static PartyHudMode ParsePartyHud(string? s) => s switch
-    {
-        "characters" => PartyHudMode.Characters,
-        "off" => PartyHudMode.Off,
-        _ => PartyHudMode.List,
-    };
+    private static PartyHudMode ParsePartyHud(string? s) => s == "off" ? PartyHudMode.Off : PartyHudMode.List;
 
     private static void HandlePartyToggle()
     {
         if (!Pressed(ref _partyToggle) || !SafeIsInCombat() || _players.Count < 2) return;
-        _partyHud = _partyHud switch
-        {
-            PartyHudMode.List => PartyHudMode.Characters,
-            PartyHudMode.Characters => PartyHudMode.Off,
-            _ => PartyHudMode.List,
-        };
+        _partyHud = _partyHud == PartyHudMode.List ? PartyHudMode.Off : PartyHudMode.List;
         Toast.Show($"{Loc.T("party_hud_" + PartyHudSpec(_partyHud))}  ({_partyToggle.Spec.ToUpperInvariant()})");
         SaveConfig();
     }
@@ -85,7 +70,7 @@ public static partial class DamageChartsMod
             var vp = _partyLayer.GetViewport().GetVisibleRect().Size;
             float sc = UiTheme.Scale(vp) * _uiScale;
 
-            var places = _partyHud == PartyHudMode.Characters ? new[] { true } : new[] { false };
+            var places = new[] { false }; // next to the party list only
             int cell = 0;
             for (int s = 0; s < _players.Count; s++)
             {

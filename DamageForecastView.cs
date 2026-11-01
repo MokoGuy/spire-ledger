@@ -118,8 +118,9 @@ internal sealed class DamageForecastView
     // fall back to the saved fraction). A drag that moves the panel turns docking off.
     public bool AnchorToPlayer { get; set; } = true;
     public Rect2? AnchorRect { get; set; }
-    // Which side of the player the docked panel goes: "left" (default), "right", "above" or "below".
-    public string Dock { get; set; } = "left";
+    // Where the docked panel goes around the player: "above" (default: keeps co-op teammates visible),
+    // "left", "right" or "below".
+    public string Dock { get; set; } = "above";
 
     public bool IsHovered()
     {

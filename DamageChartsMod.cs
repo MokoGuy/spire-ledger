@@ -45,7 +45,7 @@ public static partial class DamageChartsMod
     // Forecast placement: "player" (default) docks it beside the local player's creature, clear of enemy
     // intents; "free" uses the dragged/saved fraction. Dragging the panel switches to free.
     private static bool _fcAnchorPlayer = true;
-    private static string _fcDock = "left"; // forecast_dock: left / right / above / below the player
+    private static string _fcDock = "above"; // forecast_dock: above (default) / left / right / below the player
     private static string _lastForecastLog = "";
 
     private static readonly DamageTracker _tracker = new();
