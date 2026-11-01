@@ -228,3 +228,19 @@ public class MaxHpLossTests
     public void ZeroDamageHitsCostNothing()
         => Assert.Equal(0, Run(0, PaperCuts(0, 2, 2)).MaxHpLoss);
 }
+
+public class HandBiteTests
+{
+    [Fact]
+    public void FourBurnsInHand_EightBlockableDamage()
+    {
+        // Reported in game: 12 HP, 4 Burn in hand (2 each at end of turn), no attack -> showed "Safe".
+        var burns = new List<ForecastItem>();
+        for (int i = 0; i < 4; i++) burns.Add(new ForecastItem("Burn", ForecastKind.Dot, 1, 2, blockable: true, conditional: false));
+        var r = DamageForecast.Compute(new ForecastInputs(12, 42, 0, 0, false, burns));
+        Assert.Equal(8, r.MinLoss);
+        Assert.False(r.IsSafe);
+        var blocked = DamageForecast.Compute(new ForecastInputs(12, 42, 5, 0, false, burns));
+        Assert.Equal(3, blocked.MinLoss);
+    }
+}

@@ -1,3 +1,4 @@
+using System.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -425,10 +426,37 @@ internal static class ForecastReader
             object? cardsObj = GetProp(hand, "Cards") ?? hand; // hand is a CardPile; its list is under .Cards
             if (cardsObj is not IEnumerable cards) return;
             if (Debug) DebugHand(cards);
+            int handCount = cards.Cast<object>().Count(c => c != null);
             foreach (var card in cards)
             {
                 if (card == null) continue;
                 string tn = card.GetType().Name;
+
+                // Language-independent path: cards that bite at the end of the turn while held say so in the
+                // game's data (HasTurnEndInHandEffect) and carry their number in DynamicVars. Damage vars are
+                // Unpowered (Block stops them: Burn, Decay, Infection, Toxic, Wither); HpLoss vars and Regret
+                // (1 per card in hand) are Unblockable (Bad Luck, Beckon). Checked against v0.107.1.
+                if (card is MegaCrit.Sts2.Core.Models.CardModel cm && cm.HasTurnEndInHandEffect)
+                {
+                    string title = TextHelper.SafeGetText(() => cm.Title) ?? tn;
+                    var (bite, blockable) = TurnEndInHandDamage(cm, tn, handCount);
+                    if (bite > 0)
+                        items.Add(new ForecastItem(title, ForecastKind.Dot, 1, bite, blockable, conditional: false));
+                    continue; // non-damage ones (Doubt, Shame, Debt) cost no HP
+                }
+                // Cards that cost HP when played carry an HpLoss var: a possible loss (counts toward the max only).
+                if (card is MegaCrit.Sts2.Core.Models.CardModel pc)
+                {
+                    int hpLoss = 0;
+                    try { hpLoss = (int)Math.Round(pc.DynamicVars["HpLoss"].BaseValue, MidpointRounding.AwayFromZero); }
+                    catch { }
+                    if (hpLoss > 0)
+                    {
+                        string title = TextHelper.SafeGetText(() => pc.Title) ?? tn;
+                        items.Add(new ForecastItem(title, ForecastKind.SelfCard, 1, hpLoss, blockable: false, conditional: true));
+                        continue;
+                    }
+                }
                 // GetDescriptionForPile(Hand) resolves the {Damage} template to the real number; the raw
                 // Description LocString leaves it as "{Damage:diff()}".
                 string desc = ResolveCardText(card)
@@ -452,6 +480,27 @@ internal static class ForecastReader
             }
         }
         catch { }
+    }
+
+    private static (int Amount, bool Blockable) TurnEndInHandDamage(MegaCrit.Sts2.Core.Models.CardModel card, string typeName, int handCount)
+    {
+        if (typeName == "Regret") return (handCount, false);
+        try
+        {
+            var vars = card.DynamicVars;
+            foreach (var (name, blockable) in new[] { ("Damage", true), ("HpLoss", false) })
+            {
+                try
+                {
+                    var v = vars[name];
+                    int n = (int)Math.Round(v.BaseValue, MidpointRounding.AwayFromZero);
+                    if (n > 0) return (n, blockable);
+                }
+                catch (KeyNotFoundException) { }
+            }
+        }
+        catch { }
+        return (0, false);
     }
 
     private static string _lastHandDbg = "";
