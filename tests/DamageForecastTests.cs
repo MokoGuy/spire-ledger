@@ -158,3 +158,21 @@ public class DamageForecastTests
         Assert.Equal(6, r.MinLoss);
     }
 }
+
+public class IntentLabelTests
+{
+    [Theory]
+    [InlineData("3x3", 3)]
+    [InlineData("12", 12)]
+    [InlineData("0x2", 0)]   // weakened attacker: the game shows 0 per hit, that's no threat, not "unreadable"
+    [InlineData("0", 0)]
+    public void ParsesPerHitDamage(string label, int expected)
+        => Assert.Equal(expected, SpireLedger.DamageForecast.ParseIntentLabel(label));
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(null)]
+    [InlineData("?")]
+    public void NoNumberIsNull(string? label)
+        => Assert.Null(SpireLedger.DamageForecast.ParseIntentLabel(label));
+}

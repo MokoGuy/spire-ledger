@@ -234,11 +234,9 @@ internal static class ForecastReader
                 var m = FindMethod(intent, "GetIntentLabel", 2);
                 object? loc = m?.Invoke(intent, new object[] { targets, enemy });
                 string? text = loc != null ? TextHelper.SafeGetText(() => loc) : null;
-                if (!string.IsNullOrEmpty(text))
-                {
-                    var mm = NumRx.Match(text);
-                    if (mm.Success && int.TryParse(mm.Value, out int n) && n > 0) return n;
-                }
+                // The label is what the player sees; trust it even when it says 0 ("0x2" after a big Strength
+                // loss). Falling back to the base damage then would count hits the game shows as harmless.
+                if (DamageForecast.ParseIntentLabel(text) is int n) return n;
             }
         }
         catch { }

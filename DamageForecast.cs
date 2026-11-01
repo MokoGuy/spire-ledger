@@ -88,6 +88,17 @@ internal readonly struct ForecastResult
 
 internal static class DamageForecast
 {
+    private static readonly System.Text.RegularExpressions.Regex FirstNumber = new(@"\d+");
+
+    // Per-hit damage from an intent's display label ("3x3", "12", "0x2"), or null when the label has no
+    // number. A 0 is a real value (e.g. an attacker whose Strength is very negative), not "unreadable".
+    public static int? ParseIntentLabel(string? label)
+    {
+        if (string.IsNullOrEmpty(label)) return null;
+        var m = FirstNumber.Match(label);
+        return m.Success && int.TryParse(m.Value, out int n) ? n : null;
+    }
+
     public static ForecastResult Compute(ForecastInputs inp)
     {
         int guaranteedAttack = 0, guaranteedUnblockable = 0, condAttack = 0, condUnblockable = 0;
