@@ -5,9 +5,10 @@ release, tag, push a release, or upload to the Workshop.
 
 ## Ground rules
 
-- **Every publication needs the user's explicit go-ahead for that version.** A yes for v0.1.0 is not a
-  yes for v0.2.0. This covers pushing to `main`, creating a tag or GitHub release, and any Workshop
-  upload (including description or visibility changes). Prepare everything locally, then ask.
+- **GitHub is delegated** (user, 2026-11-01): pushing to `main`, tags and GitHub releases on
+  MokoGuy/spire-ledger can be done without asking.
+- **Every Steam Workshop publication needs the user's explicit go-ahead for that version** — upload,
+  description or visibility change. A yes for v0.3.0 is not a yes for v0.4.0. Prepare locally, then ask.
 - **This repo is a fork.** `gh` defaults to the upstream repo (brian-gates/sts2-damage-charts) unless told
   otherwise: always pass `-R MokoGuy/spire-ledger` (or run `gh repo set-default MokoGuy/spire-ledger`
   once). `scripts/release.ps1` already does this. Never open issues, PRs or releases upstream by mistake.

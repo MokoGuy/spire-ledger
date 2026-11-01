@@ -90,8 +90,8 @@ doesn't reliably reach controls on these layers.
 ## Publishing (read before any release or Workshop upload)
 
 Follow [docs/PUBLISHING.md](docs/PUBLISHING.md): method, checklist and Steam Workshop best practices.
-In short: every publication (push to main, tag, GitHub release, Workshop upload or text/visibility
-change) needs the user's explicit OK **for that version**; this repo is a fork, so `gh` must target
+In short: GitHub (push to main, tag, release) is delegated; every Steam Workshop upload or
+text/visibility change needs the user's explicit OK **for that version**; this repo is a fork, so `gh` must target
 `MokoGuy/spire-ledger` (`-R`), never upstream; use `scripts/release.ps1` and `scripts/package-workshop.ps1`.
 
 ## Spire Ledger additions

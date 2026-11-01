@@ -7,7 +7,7 @@ Read with `CLAUDE.md` (architecture, testing) and `docs/PUBLISHING.md` (release 
 - **Published:** v0.3.0 on GitHub (MokoGuy/spire-ledger, release + tag) and the Steam Workshop
   (item 3831558895, friends-only). The user's PC has a newer local build (not published) in
   `D:\FastSteamLibrary\steamapps\common\Slay the Spire 2\mods\`.
-- **Local commits on `main`, not pushed** (pushing main counts as publishing: ask first):
+- **On `main` (GitHub pushes are delegated; the Workshop still needs the user's OK):**
   - `forecast_dock` option, default **above** the player (user's choice "C" — keeps co-op teammates visible).
   - Party damage HUD only **next to the names** in the party list (`party_hud` list/off, N toggles);
     the "above the characters" and "both" variants were removed at the user's request.
