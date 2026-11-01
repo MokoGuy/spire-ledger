@@ -126,6 +126,7 @@ internal static class ProgressImport
     {
         try
         {
+            MenuButtonTick();
             if (IsOpen) { HandleMouse(); return; }
             if (_checkedThisSession || runActive) return;
             var tree = (SceneTree)Engine.GetMainLoop();
@@ -136,6 +137,71 @@ internal static class ProgressImport
             Open(fromLedger: false);
         }
         catch { _checkedThisSession = true; }
+    }
+
+    // ===== Main-menu button under the profile selector =====
+
+    // The Ledger is in the Compendium, which an empty modded profile hasn't unlocked yet, so the import
+    // is also reachable from a small button right under "Profile N · click to change" on the main menu.
+    // It follows that button's visibility (shown only on the root menu, hidden in submenus).
+    private static CanvasLayer? _btnLayer;
+    private static Panel? _btnPanel;
+    private static Label? _btnLabel;
+    private static Rect2 _btnRect;
+    private static bool _btnMouseWasDown;
+    private static Control? _profileButton;
+
+    private static void MenuButtonTick()
+    {
+        bool show = false;
+        try
+        {
+            if (Modded() && !IsOpen && !LedgerScreen.IsOpen && SaveManager.Instance.IsProfileInitialized)
+            {
+                var tree = (SceneTree)Engine.GetMainLoop();
+                if (_profileButton == null || !GodotObject.IsInstanceValid(_profileButton))
+                    _profileButton = tree.Root.FindChild("ChangeProfileButton", true, false) as Control;
+                show = _profileButton != null && _profileButton.IsVisibleInTree();
+            }
+            if (!show)
+            {
+                if (_btnLayer != null) _btnLayer.Visible = false;
+                // Keep the press state current while hidden, so the first click after it reappears counts.
+                _btnMouseWasDown = Input.IsMouseButtonPressed(MouseButton.Left);
+                return;
+            }
+
+            var tree2 = (SceneTree)Engine.GetMainLoop();
+            if (_btnLayer == null)
+            {
+                _btnLayer = new CanvasLayer { Layer = 110, Name = "SpireLedgerImportButton" };
+                tree2.Root.AddChild(_btnLayer);
+                _btnPanel = UiTheme.MakePanel(0.85f, 1f);
+                _btnLayer.AddChild(_btnPanel);
+                _btnLabel = UiTheme.MakeLabel(16, UiTheme.Cream);
+                if (GameAssets.Enabled && GameAssets.KreonBold is Font f) _btnLabel.AddThemeFontOverride("font", f);
+                _btnLayer.AddChild(_btnLabel);
+            }
+            _btnLayer.Visible = true;
+            var vp = _btnLayer.GetViewport().GetVisibleRect().Size;
+            float s = UiTheme.Scale(vp);
+            var r = _profileButton!.GetGlobalRect();
+            _btnLabel!.Text = "⇩ " + Loc.T("import_menu_button");
+            _btnLabel.AddThemeFontSizeOverride("font_size", Math.Max(10, (int)Math.Round(15 * s)));
+            var size = new Vector2(_btnLabel.GetMinimumSize().X + 28f * s, 36f * s);
+            _btnRect = new Rect2(new Vector2(r.Position.X, r.End.Y + 6f * s), size);
+            var mouse = _btnLayer.GetViewport().GetMousePosition();
+            bool hover = _btnRect.HasPoint(mouse);
+            _btnPanel!.Position = _btnRect.Position; _btnPanel.Size = _btnRect.Size;
+            _btnPanel.Modulate = hover ? new Color(1.25f, 1.2f, 1f) : Colors.White;
+            _btnLabel.Position = _btnRect.Position + new Vector2(14f * s, 7f * s);
+            _btnLabel.Modulate = hover ? UiTheme.Gold : Colors.White;
+
+            bool down = Input.IsMouseButtonPressed(MouseButton.Left);
+            if (down && !_btnMouseWasDown && hover) Open(fromLedger: true);
+            _btnMouseWasDown = down;
+        }
+        catch { if (_btnLayer != null) _btnLayer.Visible = false; }
     }
 
     // ===== Dialog =====

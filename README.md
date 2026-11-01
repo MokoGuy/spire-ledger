@@ -39,8 +39,9 @@ FastMP co-op on one PC via `scripts/dev/coop-start.sh`, an auto-fight loop, scre
 
 With any mod enabled the game uses a separate, empty save profile, so the Daily Climb, characters and
 multiplayer Ascension are locked. **Spire Ledger offers to fix this itself**: on the main menu, when your
-normal profile has more unlocks than the modded one, a dialog offers to copy it (also available from the
-Ledger screen). It goes through the game's own save store, so the Steam Cloud copy is updated too, and
+normal profile has more unlocks than the modded one, a dialog offers to copy it. It can be reopened any
+time from the **Import progress** button under the profile selector on the main menu (works on an empty
+profile, before the Compendium is unlocked) or from the Ledger screen; pick the source and target profiles. It goes through the game's own save store, so the Steam Cloud copy is updated too, and
 the previous modded progress is backed up in `%APPDATA%\SlayTheSpire2\SpireLedger\backups`.
 
 For scripting, the same copy is available outside the game (close the game first; the normal profile is

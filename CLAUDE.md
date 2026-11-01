@@ -106,8 +106,8 @@ change) needs the user's explicit OK **for that version**; this repo is a fork, 
 - `LedgerScreen.cs` — Compendium button (a signal-less `Duplicate` of `_statisticsButton`) + full-screen
   history view on its own CanvasLayer, poll-based mouse like the other views.
 - `ProgressImport.cs` — copies a normal profile's progress into a modded profile (source and target
-  picked in a dialog; offered on the main menu when the modded profile has fewer unlocks, also from the
-  Ledger). Writes through the game's `ISaveStore` (local + Steam Cloud, timestamps aligned) after a backup.
+  picked in a dialog; offered on the main menu when the modded profile has fewer unlocks, and reopened
+  from a button under the main menu's `ChangeProfileButton` — usable on an empty profile — or the Ledger). Writes through the game's `ISaveStore` (local + Steam Cloud, timestamps aligned) after a backup.
 - Co-op names: `RunLedger.PlayerName(netId)` (`PlatformUtil.GetPlayerNameRaw`, Steam persona name);
   run files store `name` + `net_id` (SteamID64 on Steam), and the Ledger groups runs by teammate.
 - `Loc.cs` — the mod's own strings in French/English following `LocManager.Instance.Language`.
