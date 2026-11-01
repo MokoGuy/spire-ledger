@@ -1382,7 +1382,11 @@ public static partial class DamageChartsMod
         try
         {
             if (c.IsPlayer)
-                return _players.Count <= 1 ? Loc.T("you").ToLowerInvariant() : (TextHelper.SafeGetText(() => c.Player!.Character.Title) ?? Loc.T("you").ToLowerInvariant());
+            {
+                if (_players.Count <= 1) return Loc.T("you").ToLowerInvariant();
+                int slot = SlotOf(c.Player);
+                return slot >= 0 ? PlayerName(slot) : TextHelper.SafeGetText(() => c.Player!.Character.Title) ?? "?";
+            }
             return TextHelper.SafeGetText(() => c.Monster!.Title) ?? "?";
         }
         catch { return "?"; }
@@ -1399,7 +1403,8 @@ public static partial class DamageChartsMod
 
     private static string PlayerName(int slot)
     {
-        try { return TextHelper.SafeGetText(() => _players[slot].Character.Title) ?? $"P{slot + 1}"; }
+        // Co-op: the player's own name (Steam persona), else their character.
+        try { return RunLedger.PlayerName(_players[slot].NetId) ?? TextHelper.SafeGetText(() => _players[slot].Character.Title) ?? $"P{slot + 1}"; }
         catch { return $"P{slot + 1}"; }
     }
 

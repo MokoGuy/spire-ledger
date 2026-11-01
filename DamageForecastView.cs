@@ -241,8 +241,8 @@ internal sealed class DamageForecastView
             string tail = after <= 0 ? "☠" : Loc.T("left");
             string hidden = r.HasHidden ? $" [color=#{GoldHex}][font_size={F(15, sc)}]+?[/font_size][/color]" : "";
             string line1 = r.IsSafe
-                ? $"[color=#{GreenHex}]Safe ✓[/color]"
-                : $"[color=#{LossHex}]{lossStr} [font_size={F(15, sc)}]HP[/font_size][/color]{hidden}";
+                ? $"[color=#{GreenHex}]{Loc.T("safe")}[/color]"
+                : $"[color=#{LossHex}]{lossStr} [font_size={F(15, sc)}]{Loc.T("hp")}[/font_size][/color]{hidden}";
             string line2 = $"[color=#{CreamHex}][font_size={F(13, sc)}]{r.CurrentHp} → [color=#{afterHex}]{after}[/color] {tail}[/font_size][/color]";
             UiTheme.Apply(_loss, F(30, sc), UiTheme.Red);
             if (numFont != null)
@@ -262,7 +262,7 @@ internal sealed class DamageForecastView
             if (mitigated)
             {
                 led = Loc.T("in_n", r.Incoming);
-                if (r.Block > 0) led += $"\n[color=#{BlockHex}]Blk {r.Block}[/color]";
+                if (r.Block > 0) led += $"\n[color=#{BlockHex}]{Loc.T("blk", r.Block)}[/color]";
                 if (r.OstyAbsorb > 0) led += $"\n[color=#{OstyHex}]Osty {r.OstyAbsorb}[/color]";
             }
             // Permanent loss (e.g. Paper Cuts): max HP lost, in purple, at the bottom of the right column.

@@ -620,7 +620,7 @@ internal sealed class DamageDetailView
             {
                 var b = Next(ref cur, 12, dim);
                 string list = PartyBadges != null && s < PartyBadges.Length ? PartyBadges[s] : "";
-                b.Text = $"{Loc.T("badges")} : {(string.IsNullOrEmpty(list) ? Loc.T("no_badge") : list)}";
+                b.Text = Loc.T("badges_list", string.IsNullOrEmpty(list) ? Loc.T("no_badge") : list);
                 b.SetPosition(new Vector2(x + 12f * _fontScale, y - 2f * _fontScale));
                 y += PartyBadgeH;
             }

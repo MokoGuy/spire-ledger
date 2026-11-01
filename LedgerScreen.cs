@@ -279,7 +279,7 @@ internal static class LedgerScreen
                 string netId = (string?)players[s]?["net_id"] ?? "";
                 var list = badges[netId] as JsonArray;
                 string text = list == null || list.Count == 0 ? Loc.T("no_badge") : string.Join(", ", list.Select(b => (string?)b ?? ""));
-                Text($"{Loc.T("badges")} : {text}", 12, Dim).Position = new Vector2(x + 12f * _s, ry - 2f * _s);
+                Text(Loc.T("badges_list", text), 12, Dim).Position = new Vector2(x + 12f * _s, ry - 2f * _s);
                 ry += 20f * _s;
             }
         }

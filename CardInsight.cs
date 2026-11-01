@@ -168,14 +168,14 @@ internal static class CardInsight
         var copies = me.Deck.Cards.Where(c => c.Id.Entry == id).ToList();
         int upgraded = copies.Count(c => c.IsUpgraded);
         string deck = copies.Count == 0 ? Loc.T("ci_not_in_deck")
-            : upgraded > 0 ? Loc.T("ci_in_deck_up", copies.Count, upgraded) : Loc.T("ci_in_deck", copies.Count);
+            : upgraded > 0 ? Loc.T(upgraded == 1 ? "ci_in_deck_up1" : "ci_in_deck_up", copies.Count, upgraded) : Loc.T("ci_in_deck", copies.Count);
         var lines = new List<string> { deck };
         long now = runPlays(id);
         if (copies.Count > 0 || now > 0) lines.Add(Loc.T("ci_played_run", now));
         if (history.TryGetValue(id, out var h) && (h.Runs > 0 || h.PlayRuns > 0))
         {
             var parts = new List<string>();
-            if (h.Runs > 0) parts.Add(Loc.T("ci_hist_runs", h.Runs, h.Wins, (int)Math.Round(100.0 * h.Wins / h.Runs)));
+            if (h.Runs > 0) parts.Add(Loc.T(h.Runs == 1 ? "ci_hist_runs1" : "ci_hist_runs", h.Runs, h.Wins, (int)Math.Round(100.0 * h.Wins / h.Runs)));
             if (h.PlayRuns > 0) parts.Add(Loc.T("ci_hist_plays", (h.Plays / (double)h.PlayRuns).ToString("0.#")));
             lines.Add(string.Join(" · ", parts));
         }
