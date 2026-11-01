@@ -8,7 +8,7 @@ CI, so releases are built here. Steps:
   1. checks the working tree is clean and the version isn't tagged yet;
   2. writes the version into mod_manifest.json (and commits it if it changed);
   3. builds Release and runs the unit tests;
-  4. zips SpireLedger.dll + SpireLedger.json + INSTALL.txt into dist/release/SpireLedger-v<version>.zip;
+  4. zips SpireLedger.dll + SpireLedger.json + LICENSE.txt + INSTALL.txt into dist/release/SpireLedger-v<version>.zip;
   5. with -Publish only: tags v<version>, pushes the tag and runs `gh release create` with the zip.
 
 .EXAMPLE
@@ -55,6 +55,7 @@ Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $stage | Out-Null
 Copy-Item out\SpireLedger.dll (Join-Path $stage 'SpireLedger.dll')
 Copy-Item mod_manifest.json (Join-Path $stage 'SpireLedger.json')
+Copy-Item LICENSE (Join-Path $stage 'LICENSE.txt')   # MIT: the notice ships with every copy
 @"
 Spire Ledger v$Version — Slay the Spire 2 mod
 

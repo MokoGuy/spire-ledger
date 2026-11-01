@@ -38,9 +38,11 @@ if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
 Write-Host "==> Staging $content"
 Remove-Item $content -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force $content | Out-Null
-# Exactly what subscribers receive: the DLL and the manifest, named like a manual install.
+# Exactly what subscribers receive: the DLL and the manifest, named like a manual install, plus the MIT
+# license that must ship with every copy (the game only reads the .json/.dll/.pck files of a mod folder).
 Copy-Item out\SpireLedger.dll (Join-Path $content 'SpireLedger.dll')
 Copy-Item mod_manifest.json (Join-Path $content 'SpireLedger.json')
+Copy-Item LICENSE (Join-Path $content 'LICENSE.txt')
 
 $image = Get-Item (Join-Path $workspace 'image.png')
 if ($image.Length -ge 1MB) { throw "image.png is $([math]::Round($image.Length / 1MB, 2)) MB; Steam needs less than 1 MB." }

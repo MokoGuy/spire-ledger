@@ -53,14 +53,23 @@ No official MegaCrit publishing guide beyond the uploader README was found (2026
   animated GIF under that name, built by `docs/marketing/make-gif.sh`: Steam accepts it and animates it), optional
   `previews/` (each < 1 MB; missing files are removed from the item), `content/` (rebuilt by the script).
 - **content/ = exactly what a manual install has**: `SpireLedger.dll` + `SpireLedger.json` (the
-  manifest renamed). No `.pdb`, no personal `SpireLedger.conf`, no test tools.
+  manifest renamed) + `LICENSE.txt` (MIT: the notice ships with every copy; the game only reads a mod
+  folder's .json/.dll/.pck). No `.pdb`, no personal `SpireLedger.conf`, no test tools.
+- **Public page**: say where data is stored and what goes over the network (only the mod version, to the
+  run's players), that Early Access updates can break a panel, and link GitHub issues (enabled on the
+  fork: forks start with issues off).
 - **One item forever**: the first upload writes `dist/workshop/mod_id.txt` — it is committed so every
   later upload updates the same item (item 3831558895). Deleting it creates a new item.
-- **Visibility** (`private`, `friends_only`, `unlisted`, `public`): start `friends_only` or `unlisted`,
-  have a friend subscribe and test on another PC, then go `public`. Changing it on the Workshop web page
-  also works.
+- **Visibility** (`private`, `friends_only`, `unlisted`, `public`): the item is `public` since v0.5.0
+  (user, 2026-11-01). `workshop.json`'s `visibility` is sent on **every** upload and overrides a change made
+  on the Workshop web page (the v0.5.0 upload put a web-side switch to public back to friends-only), so
+  keep the file in sync with the page. Check from outside with the public API:
+  `curl -s -X POST https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/ -d itemcount=1 -d "publishedfileids[0]=3831558895"`
+  (`result` 1 = public and visible, 9 = hidden: not public, or the Workshop legal agreement not accepted).
 - **changeNote on every update**: short, user-facing, starts with the version.
-- **Tags**: `Tools & APIs` is reserved for tool/API mods; leave tags empty or use gameplay-neutral ones.
+- **Tags**: `Tools & APIs` is reserved for tool/API mods. This game's mods use `Characters`, `Cards`,
+  `Relics`, `Cosmetics`, `QoL`, `Visuals`, `Misc` plus free-form language tags; Spire Ledger uses `QoL`,
+  `English`, `French`.
   `contentDescriptors` only if mature content applies (never for this mod).
 - **minBranch/maxBranch**: leave unset (the uploader README says Steam handles them oddly).
 - **Legal agreement**: uploading implies accepting the Steam Workshop terms; if the account never did,

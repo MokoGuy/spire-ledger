@@ -43,8 +43,8 @@
 
 French versions and the sources of these images: [docs/marketing](docs/marketing/).
 
-**Install:** subscribe on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895)
-(friends-only for now), or download the zip from Releases (or build it, below), copy `SpireLedger.dll` and
+**Install:** subscribe on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895),
+or download the zip from Releases (or build it, below), copy `SpireLedger.dll` and
 `SpireLedger.json` into the game's `mods` folder, start the game and accept loading mods. Both co-op
 players can join each other even if only one has it (it doesn't affect gameplay); whoever has it sees the
 whole party's stats.
@@ -177,7 +177,7 @@ on first launch). Restart the game after replacing the DLL — mods load at star
 
 ### Players
 
-Spire Ledger is on the Workshop as a **friends-only** item for now:
+Spire Ledger is public on the Workshop:
 [steamcommunity.com/sharedfiles/filedetails/?id=3831558895](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895).
 Subscribe, enable it in **Settings → Mods** and restart the game. On first launch it offers to import your
 normal progress (Daily Climb, characters) into the modded profile.
@@ -197,8 +197,8 @@ powershell -ExecutionPolicy Bypass -File scripts\package-workshop.ps1
 
 The first upload **creates** the item and writes `dist/workshop/mod_id.txt`: **commit it** so later runs
 update the same item. Before each update, bump `version` in `mod_manifest.json` and `changeNote` in
-`workshop.json`. To go public, set `"visibility": "public"` and re-run (or change it on the Workshop
-page). `scripts/package-workshop.sh` is the macOS equivalent inherited from Damage Charts.
+`workshop.json`. `visibility` in `workshop.json` is applied on **every** upload and overrides a change made
+on the Workshop page, so keep it in sync with the page (it is `public`). `scripts/package-workshop.sh` is the macOS equivalent inherited from Damage Charts.
 
 ## Config — `SpireLedger.conf` (next to the DLL in `mods/`)
 

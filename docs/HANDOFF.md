@@ -4,8 +4,8 @@ Read with `CLAUDE.md` (architecture, testing) and `docs/PUBLISHING.md` (release 
 
 ## Where things stand
 
-- **Published:** v0.5.0 on GitHub (release + tag) and the Steam Workshop (item 3831558895, still
-  friends-only): Ledger "Builds" tab (win rates per character/relic/card from the game's `.run` history,
+- **Published:** v0.5.0 on GitHub (release + tag) and the Steam Workshop (item 3831558895, public
+  since 2026-11-01): Ledger "Builds" tab (win rates per character/relic/card from the game's `.run` history,
   favorite/lucky/cursed highlights, game art) and each run's final deck/relics. Images unchanged since
   v0.4.0 (animated GIF main image, 5 English previews; no Builds preview yet). The user's `mods/` has the
   v0.5.0 build + STS2MCP (may stay).
@@ -33,8 +33,6 @@ Read with `CLAUDE.md` (architecture, testing) and `docs/PUBLISHING.md` (release 
 
 ## Other open items
 
-- Workshop visibility is still `friends_only`: going `unlisted`/`public` is the user's call (after a
-  friend has tested the Workshop install on another PC).
 - Card history under card choices not verifiable on Steam-less instances without the history hook.
 - The Ledger's hover names on icons (`UpdateTip`) were not seen in a screenshot: STS2MCP's `mouse_click`
   warps the OS cursor in window pixels (4K) but sends the event in viewport pixels (1080p), so a test can't
