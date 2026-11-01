@@ -757,6 +757,7 @@ public static partial class DamageChartsMod
             HandleHotkey();
             HandleToggles();
             HandlePartyToggle();
+            CardInsight.Tick(SafeIsInCombat(), id => _run.CardPlayCount(_localSlot, id));
             Toast.Tick();
             LedgerScreen.Tick();
             ProgressImport.Tick(SafeIsRunInProgress());

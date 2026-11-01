@@ -245,7 +245,23 @@ internal static class RunLedger
         ["taken_by_source"] = Entries(ps.Taken),
         ["effects"] = Entries(ps.Effects),
         ["potions"] = Entries(ps.Potions),
+        ["card_plays"] = CardPlaysJson(ps.CardPlays),
     };
+
+    private static JsonObject CardPlaysJson(Dictionary<string, long> plays)
+    {
+        var o = new JsonObject();
+        foreach (var (id, n) in plays) o[id] = n;
+        return o;
+    }
+
+    internal static Dictionary<string, long> ReadCardPlays(JsonNode? n)
+    {
+        var d = new Dictionary<string, long>();
+        if (n is JsonObject o)
+            foreach (var kv in o) if (kv.Value != null) d[kv.Key] = (long)kv.Value;
+        return d;
+    }
 
     private static JsonArray Entries(List<SourceEntry> list)
     {
@@ -280,6 +296,7 @@ internal static class RunLedger
         Taken = ReadEntries(o["taken_by_source"]),
         Effects = ReadEntries(o["effects"]),
         Potions = ReadEntries(o["potions"]),
+        CardPlays = ReadCardPlays(o["card_plays"]),
     };
 
     private static List<SourceSnapshot> ReadCombats(JsonObject doc, IReadOnlyList<string> labels, int localSlot)

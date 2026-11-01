@@ -46,6 +46,7 @@ internal sealed class PlayerSources
     public long BlockGiven;      // block this player's cards gave to other players
     public long BiggestHit;      // largest single damage instance dealt
     public string BiggestHitSource = "";
+    public Dictionary<string, long> CardPlays = new(); // card id (e.g. STRIKE_IRONCLAD) -> times played
 }
 
 internal sealed class ChartRow
@@ -98,6 +99,7 @@ internal sealed class DamageTracker
     private readonly Dictionary<int, Dictionary<string, long>> _potionsByPlayer = new(); // slot -> potion -> uses
     private readonly Dictionary<int, Dictionary<string, long>> _effectsByPlayer = new(); // slot -> power -> stacks
     private readonly Dictionary<int, long> _cardsByPlayer = new();
+    private readonly Dictionary<int, Dictionary<string, long>> _cardPlaysByPlayer = new();
     private readonly Dictionary<int, long> _energyByPlayer = new();
     private readonly Dictionary<int, long> _blockGivenByPlayer = new();
     private readonly Dictionary<int, (long Amount, string Source)> _biggestHit = new();
@@ -123,6 +125,7 @@ internal sealed class DamageTracker
             _potionsByPlayer.Clear();
             _effectsByPlayer.Clear();
             _cardsByPlayer.Clear();
+            _cardPlaysByPlayer.Clear();
             _energyByPlayer.Clear();
             _blockGivenByPlayer.Clear();
             _biggestHit.Clear();
@@ -184,7 +187,17 @@ internal sealed class DamageTracker
         }
     }
 
-    public void AddCardPlayed(int slot) => AddTotal(_cardsByPlayer, slot, 1);
+    public void AddCardPlayed(int slot, string? cardId)
+    {
+        AddTotal(_cardsByPlayer, slot, 1);
+        if (slot < 0 || string.IsNullOrEmpty(cardId)) return;
+        lock (_lock)
+        {
+            if (!_cardPlaysByPlayer.TryGetValue(slot, out var map)) { map = new Dictionary<string, long>(); _cardPlaysByPlayer[slot] = map; }
+            map.TryGetValue(cardId, out long cur);
+            map[cardId] = cur + 1;
+        }
+    }
 
     public void AddEnergy(int slot, int amount) => AddTotal(_energyByPlayer, slot, amount);
 
@@ -266,6 +279,7 @@ internal sealed class DamageTracker
                 ps.Potions = SortedList(_potionsByPlayer, s, out _);
                 ps.Effects = SortedList(_effectsByPlayer, s, out ps.EffectsTotal);
                 _cardsByPlayer.TryGetValue(s, out ps.CardsPlayed);
+                if (_cardPlaysByPlayer.TryGetValue(s, out var plays)) ps.CardPlays = new Dictionary<string, long>(plays);
                 _energyByPlayer.TryGetValue(s, out ps.EnergySpent);
                 _blockGivenByPlayer.TryGetValue(s, out ps.BlockGiven);
                 if (_biggestHit.TryGetValue(s, out var big)) { ps.BiggestHit = big.Amount; ps.BiggestHitSource = big.Source; }

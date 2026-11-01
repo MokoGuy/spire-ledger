@@ -132,7 +132,7 @@ public static partial class DamageChartsMod
             if (cardPlay is not MegaCrit.Sts2.Core.Entities.Cards.CardPlay play || play.IsAutoPlay) return;
             if (!play.IsFirstInSeries) return; // a card replayed N times counts once
             int slot = SlotOf(play.Card?.Owner);
-            if (slot >= 0) _tracker.AddCardPlayed(slot);
+            if (slot >= 0) _tracker.AddCardPlayed(slot, play.Card?.Id.Entry);
         }
         catch { }
     }
@@ -236,6 +236,7 @@ public static partial class DamageChartsMod
     private static void OnRunEnded()
     {
         if (_recapEnabled && _run.HasData()) _recapVisible = true;
+        CardInsight.InvalidateHistory(); // the finished run now counts in the card history
     }
 }
 

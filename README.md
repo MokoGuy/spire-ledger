@@ -18,6 +18,12 @@
   save & continue.
 - **Ledger screen** — a "Registre" / "Ledger" button in the Compendium next to Statistics: records,
   your runs, and each run's party totals, badges and fights.
+- **Card choices** (rewards, "choose a card", shop): under each offered card, how many copies are already
+  in your deck (and upgraded), how often you played it this run, and its history — in how many of your
+  past runs it was in your final deck and how many you won (from the game's own run history, so runs
+  played without the mod count too), plus plays per run from Spire Ledger's run files.
+- **In-combat toggles**: `V` forecast, `B` damage chart, `N` co-op party damage (next to the player list /
+  under the characters / hidden).
 - The mod's own labels follow the game language (French / English).
 
 | Co-op combat stats | End-of-run recap | Compendium | Ledger |

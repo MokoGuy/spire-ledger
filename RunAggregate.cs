@@ -26,6 +26,7 @@ internal sealed class RunAggregate
     private Dictionary<string, long>[] _effectsBySource = Array.Empty<Dictionary<string, long>>();
     private Dictionary<string, long>[] _potionsBySource = Array.Empty<Dictionary<string, long>>();
     private long[] _cards = Array.Empty<long>();
+    private Dictionary<string, long>[] _cardPlays = Array.Empty<Dictionary<string, long>>();
     private long[] _energy = Array.Empty<long>();
     private long[] _blockGiven = Array.Empty<long>();
     private long[] _biggest = Array.Empty<long>();
@@ -40,6 +41,10 @@ internal sealed class RunAggregate
     private int _encounters;
 
     public bool HasData() => _encounters > 0;
+
+    // Times a player played a card (by id) in the fights folded so far this run.
+    public long CardPlayCount(int slot, string cardId)
+        => slot >= 0 && slot < _cardPlays.Length && _cardPlays[slot].TryGetValue(cardId, out long n) ? n : 0;
 
     // One finished combat's totals for a given player slot, for the in-combat run-history band.
     public readonly struct EncounterStat
@@ -67,6 +72,7 @@ internal sealed class RunAggregate
         _dealt = _taken = _heal = _block = Array.Empty<long>();
         _dealtBySource = _takenBySource = _effectsBySource = _potionsBySource = Array.Empty<Dictionary<string, long>>();
         _cards = _energy = _blockGiven = _biggest = Array.Empty<long>();
+        _cardPlays = Array.Empty<Dictionary<string, long>>();
         _biggestSrc = Array.Empty<string>();
         _sourceIcon.Clear();
         _encDealt.Clear();
@@ -101,6 +107,7 @@ internal sealed class RunAggregate
             Merge(_effectsBySource[s], ps.Effects);
             Merge(_potionsBySource[s], ps.Potions);
             _cards[s] += ps.CardsPlayed;
+            foreach (var (id, n) in ps.CardPlays) { _cardPlays[s].TryGetValue(id, out long c); _cardPlays[s][id] = c + n; }
             _energy[s] += ps.EnergySpent;
             _blockGiven[s] += ps.BlockGiven;
             if (ps.BiggestHit > _biggest[s]) { _biggest[s] = ps.BiggestHit; _biggestSrc[s] = ps.BiggestHitSource; }
@@ -133,6 +140,7 @@ internal sealed class RunAggregate
         _effectsBySource = new Dictionary<string, long>[_playerCount];
         _potionsBySource = new Dictionary<string, long>[_playerCount];
         _cards = new long[_playerCount];
+        _cardPlays = new Dictionary<string, long>[_playerCount];
         _energy = new long[_playerCount];
         _blockGiven = new long[_playerCount];
         _biggest = new long[_playerCount];
@@ -142,6 +150,7 @@ internal sealed class RunAggregate
             _dealtBySource[s] = new Dictionary<string, long>();
             _takenBySource[s] = new Dictionary<string, long>();
             _effectsBySource[s] = new Dictionary<string, long>();
+            _cardPlays[s] = new Dictionary<string, long>();
             _potionsBySource[s] = new Dictionary<string, long>();
             _biggestSrc[s] = "";
         }
@@ -171,6 +180,7 @@ internal sealed class RunAggregate
                 Effects = SortedList(_effectsBySource[s], out long et),
                 Potions = SortedList(_potionsBySource[s], out _),
                 CardsPlayed = _cards[s],
+                CardPlays = new Dictionary<string, long>(_cardPlays[s]),
                 EnergySpent = _energy[s],
                 BlockGiven = _blockGiven[s],
                 BiggestHit = _biggest[s],
