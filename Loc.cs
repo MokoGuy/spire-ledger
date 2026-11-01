@@ -75,6 +75,21 @@ internal static class Loc
         ["mode_Standard"] = ("Standard", "Standard"),
         ["mode_Daily"] = ("Daily Climb", "Défi du jour"),
         ["mode_Custom"] = ("Custom", "Personnalisée"),
+        // Progress import
+        ["import_title"] = ("Import your progress?", "Importer votre progression ?"),
+        ["import_body"] = ("With mods on, Slay the Spire 2 uses a separate save profile. Your normal profile has {0} unlocks (Daily Climb, characters, Ascension...), this one has {1}.\n\nCopy your normal progress into this profile? Your normal profile is not changed.",
+                           "Avec des mods, Slay the Spire 2 utilise un profil de sauvegarde séparé. Votre profil normal a {0} déblocages (défi du jour, personnages, Ascension...), celui-ci {1}.\n\nCopier votre progression normale dans ce profil ? Votre profil normal n'est pas modifié."),
+        ["import_yes"] = ("Import", "Importer"),
+        ["import_later"] = ("Later", "Plus tard"),
+        ["import_never"] = ("Don't ask again", "Ne plus demander"),
+        ["import_failed"] = ("The import failed: {0}", "L'import a échoué : {0}"),
+        ["import_done_title"] = ("Progress imported", "Progression importée"),
+        ["import_done_body"] = ("Restart the game so every unlock is taken into account.", "Redémarrez le jeu pour que tous les déblocages soient pris en compte."),
+        ["import_button"] = ("Import my unmodded progress", "Importer ma progression sans mods"),
+        ["import_nothing"] = ("This profile already has all your unlocks ({0}).", "Ce profil a déjà tous vos déblocages ({0})."),
+        ["quit_game"] = ("Quit the game", "Quitter le jeu"),
+        ["ok"] = ("OK", "OK"),
+        ["cancel"] = ("Cancel", "Annuler"),
         ["page"] = ("{0} / {1}", "{0} / {1}"),
     };
 

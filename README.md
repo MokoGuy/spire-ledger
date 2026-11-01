@@ -27,18 +27,24 @@
 **Install:** subscribe on the [Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895)
 (friends-only for now), or download the zip from Releases (or build it, below), copy `SpireLedger.dll` and
 `SpireLedger.json` into the game's `mods` folder, start the game and accept loading mods. Both co-op
-players need the same version.
+players can join each other even if only one has it (it doesn't affect gameplay); whoever has it sees the
+whole party's stats.
 
 **Developing:** `scripts/dev/sts2.py` drives the game for tests through a locally patched
 [STS2MCP](https://github.com/Gennadiyev/STS2MCP) (seeded custom runs, Steam-less local instances, a 2-player
 FastMP co-op on one PC via `scripts/dev/coop-start.sh`, an auto-fight loop, screenshots).
 `scripts/release.ps1 -Version x.y.z [-Publish]` builds, tests and packages a release.
 
-### Keep your unlocks when playing modded (Windows)
+### Keep your unlocks when playing modded
 
 With any mod enabled the game uses a separate, empty save profile, so the Daily Climb, characters and
-multiplayer Ascension are locked. Close the game, then copy your normal progress into the modded profile
-(the normal profile is only read; the modded one is backed up first):
+multiplayer Ascension are locked. **Spire Ledger offers to fix this itself**: on the main menu, when your
+normal profile has more unlocks than the modded one, a dialog offers to copy it (also available from the
+Ledger screen). It goes through the game's own save store, so the Steam Cloud copy is updated too, and
+the previous modded progress is backed up in `%APPDATA%\SlayTheSpire2\SpireLedger\backups`.
+
+For scripting, the same copy is available outside the game (close the game first; the normal profile is
+only read, the modded one is backed up):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\import-vanilla-progress.ps1
@@ -153,7 +159,8 @@ on first launch). Restart the game after replacing the DLL — mods load at star
 
 Spire Ledger is on the Workshop as a **friends-only** item for now:
 [steamcommunity.com/sharedfiles/filedetails/?id=3831558895](https://steamcommunity.com/sharedfiles/filedetails/?id=3831558895).
-Subscribe, enable it in **Settings → Mods** and restart the game. Both co-op players need it.
+Subscribe, enable it in **Settings → Mods** and restart the game. On first launch it offers to import your
+normal progress (Daily Climb, characters) into the modded profile.
 
 ### Maintainers (publishing, Windows)
 

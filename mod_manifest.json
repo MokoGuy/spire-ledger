@@ -2,7 +2,7 @@
   "id": "SpireLedger",
   "name": "Spire Ledger",
   "author": "MokoGuy (fork of Damage Charts by zaxnyd)",
-  "description": "Co-op stats for Slay the Spire 2: who dealt the damage (Poison and Doom credited to whoever applied them), effects applied, block given, cards and energy, per fight and per run; an end-of-run recap with each player's badges; and a Ledger screen in the Compendium with your run history and records. Plus the Damage Charts forecast and combat breakdown (hotkey C).",
+  "description": "Co-op stats for Slay the Spire 2: who dealt the damage (Poison and Doom credited to whoever applied them), effects applied, block given, cards and energy, per fight and per run; an end-of-run recap with each player's badges; a Ledger screen in the Compendium with your run history and records; and a one-click import of your normal progress into the modded profile. Plus the Damage Charts forecast and combat breakdown (hotkey C).",
   "version": "0.1.0",
   "min_game_version": "0.107.1",
   "has_pck": false,

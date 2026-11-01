@@ -60,10 +60,10 @@ Spire Ledger v$Version — Slay the Spire 2 mod
 
 Install: copy SpireLedger.dll and SpireLedger.json into the game's mods folder
 (Steam > Slay the Spire 2 > Manage > Browse local files, then the "mods" folder; create it if missing),
-then start the game and accept loading mods. Both co-op players need the same version.
+then start the game and accept loading mods. A friend without the mod can still join your co-op run.
 
-Keep your unlocks (Daily Climb, characters) in the modded save profile: see
-scripts/import-vanilla-progress.ps1 in https://github.com/MokoGuy/spire-ledger
+With mods on, the game uses a separate save profile: on the main menu, Spire Ledger offers to import
+your normal progress (Daily Climb, characters, Ascension) in one click.
 
 Run history files: %APPDATA%\SlayTheSpire2\SpireLedger\runs
 "@ | Set-Content (Join-Path $stage 'INSTALL.txt') -Encoding utf8

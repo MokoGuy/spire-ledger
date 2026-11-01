@@ -144,6 +144,7 @@ internal static class LedgerScreen
         var title = Text(Loc.T("ledger_title"), 30, UiTheme.Gold, bold: true);
         title.Position = new Vector2(pad, pad * 0.7f);
 
+        ImportButton(pad, vp);
         if (_runs.Count == 0)
         {
             Text(Loc.T("no_runs"), 18, UiTheme.Cream).Position = new Vector2(pad, pad * 0.7f + 70f * _s);
@@ -372,6 +373,26 @@ internal static class LedgerScreen
         var l = Text(glyph, 18, UiTheme.Gold, bold: true);
         l.Position = pos + new Vector2(10f * _s, 2f * _s);
         _hits.Add((new Rect2(pos, size), onClick));
+    }
+
+    // Bottom-right: copy the unmodded progress into this modded profile (see ProgressImport).
+    private static void ImportButton(float pad, Vector2 vp)
+    {
+        var counts = ProgressImport.Counts();
+        if (counts == null) return;
+        var size = new Vector2(380f * _s, 54f * _s);
+        var pos = new Vector2(vp.X - pad - size.X, vp.Y - size.Y - pad * 0.6f);
+        var panel = UiTheme.MakePanel(0.9f, _s);
+        panel.Position = pos; panel.Size = size;
+        _root!.AddChild(panel);
+        var l = Text(Loc.T("import_button"), 16, UiTheme.Cream, bold: true);
+        l.Position = pos + new Vector2(18f * _s, 14f * _s);
+        var (vanilla, modded) = counts.Value;
+        _hits.Add((new Rect2(pos, size), () =>
+        {
+            if (vanilla > modded) ProgressImport.ShowOffer(vanilla, modded, fromLedger: true);
+            else Text(Loc.T("import_nothing", modded), 14, Dim).Position = pos + new Vector2(0f, -26f * _s);
+        }));
     }
 
     private static void BackButton(float pad, Vector2 vp)
