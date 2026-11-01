@@ -30,6 +30,7 @@ internal static class Loc
         ["more"] = ("+ {0} more", "+ {0} de plus"),
         ["potions"] = ("Potions", "Potions"),
         ["you"] = ("You", "Vous"),
+        ["player_short"] = ("P{0}", "J{0}"),
         ["log_healed"] = ("{0} healed  {1}", "{0} soigné  {1}"),
         ["log_used"] = ("{0} used{1}", "{0} utilisée{1}"),
         ["no_damage"] = ("No damage yet", "Aucun dégât pour l'instant"),

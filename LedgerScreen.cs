@@ -440,7 +440,7 @@ internal static class LedgerScreen
 
     private static string Label(List<string> labels, int slot) => slot >= 0 && slot < labels.Count ? labels[slot] : $"P{slot + 1}";
 
-    private static string Short(List<string> labels, int slot) => $"J{slot + 1}";
+    private static string Short(List<string> labels, int slot) => Loc.T("player_short", slot + 1);
 
     private static string When(JsonObject run)
     {
