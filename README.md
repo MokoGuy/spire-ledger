@@ -15,8 +15,9 @@ multiplayer Ascension are locked. Close the game, then copy your normal progress
 powershell -ExecutionPolicy Bypass -File scripts\import-vanilla-progress.ps1
 ```
 
-Options: `-Profile 2` for another save slot, `-SkipHistory` to leave the run history out,
-`-SteamId <id>` if several Steam accounts played on this PC.
+Then launch the game with mods right away. Options: `-Profile 2` for another save slot, `-SteamId <id>`
+if several Steam accounts played on this PC. The run history is not copied: the game's Steam Cloud sync
+deletes modded history runs that aren't in the cloud.
 
 
 A standalone damage analytics and incoming-damage forecast mod for [Slay the Spire 2](https://store.steampowered.com/app/2868840/).

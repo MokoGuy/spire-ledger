@@ -7,9 +7,14 @@ With any mod enabled, the game switches to a separate, empty save profile
 (%APPDATA%\SlayTheSpire2\steam\<SteamId>\modded\profileN). It has none of your unlocks, so the
 Daily Climb (DAILY_RUN_EPOCH), characters and multiplayer Ascension are missing.
 
-This script copies progress.save, prefs.save (and their .backup files) and, unless -SkipHistory,
-the run history from the normal profile into the modded one. The normal profile is only read.
-The current modded profile is first backed up next to itself as profileN.backup-<timestamp>.
+This script copies progress.save and prefs.save (and their .backup files) from the normal profile
+into the modded one. The normal profile is only read. The current modded profile is first backed up
+next to itself as profileN.backup-<timestamp>.
+
+At startup the game syncs Steam Cloud to local: it overwrites a local save when the cloud copy is
+newer (by file time) and deletes local history runs that are not in the cloud. So the copied files
+are stamped with the current time to win that sync, and the run history is not copied: the game
+would delete it on the next launch.
 
 Close the game before running it.
 
@@ -17,12 +22,11 @@ Close the game before running it.
 powershell -ExecutionPolicy Bypass -File scripts\import-vanilla-progress.ps1
 
 .EXAMPLE
-powershell -ExecutionPolicy Bypass -File scripts\import-vanilla-progress.ps1 -Profile 2 -SkipHistory
+powershell -ExecutionPolicy Bypass -File scripts\import-vanilla-progress.ps1 -Profile 2
 #>
 param(
     [ValidateRange(1, 3)][int]$Profile = 1,
-    [string]$SteamId,
-    [switch]$SkipHistory
+    [string]$SteamId
 )
 
 $ErrorActionPreference = 'Stop'
@@ -55,18 +59,15 @@ if (Test-Path $dstProfile) {
 }
 New-Item -ItemType Directory -Force $dst | Out-Null
 
+$now = Get-Date
 foreach ($name in 'progress.save', 'progress.save.backup', 'prefs.save', 'prefs.save.backup') {
     $file = Join-Path $src $name
-    if (Test-Path $file) { Copy-Item $file (Join-Path $dst $name) -Force }
+    if (Test-Path $file) {
+        $target = Join-Path $dst $name
+        Copy-Item $file $target -Force
+        # Newer than the cloud copy, so the game's startup sync keeps it and then uploads it.
+        (Get-Item $target).LastWriteTime = $now
+    }
 }
 Write-Host "Copied progress and prefs from profile$Profile to modded\profile$Profile"
-
-if (-not $SkipHistory -and (Test-Path (Join-Path $src 'history'))) {
-    $histDst = Join-Path $dst 'history'
-    New-Item -ItemType Directory -Force $histDst | Out-Null
-    Copy-Item (Join-Path $src 'history\*') $histDst -Force
-    $runs = @(Get-ChildItem $histDst -Filter '*.run').Count
-    Write-Host "Copied run history ($runs runs)"
-}
-
-Write-Host "Done. Launch the game with mods and pick save profile $Profile."
+Write-Host "Done. Launch the game with mods right away and pick save profile $Profile."
