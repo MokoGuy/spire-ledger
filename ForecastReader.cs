@@ -176,7 +176,6 @@ internal static class ForecastReader
         return true;
     }
 
-    private static readonly System.Text.RegularExpressions.Regex NumRx = new(@"\d+");
     // "take ... damage" / "lose ... HP|health" — self-harm, as opposed to attacks that "deal" damage.
     private static readonly System.Text.RegularExpressions.Regex SelfHarmRx = new(
         @"\b(take|lose)\b.{0,40}\b(damage|hp|health)\b",
