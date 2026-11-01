@@ -5,6 +5,19 @@
 > badges), a detailed end-of-run recap and a local HTML history page. Work in progress — the sections
 > below still describe the upstream Damage Charts mod.
 
+### Keep your unlocks when playing modded (Windows)
+
+With any mod enabled the game uses a separate, empty save profile, so the Daily Climb, characters and
+multiplayer Ascension are locked. Close the game, then copy your normal progress into the modded profile
+(the normal profile is only read; the modded one is backed up first):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\import-vanilla-progress.ps1
+```
+
+Options: `-Profile 2` for another save slot, `-SkipHistory` to leave the run history out,
+`-SteamId <id>` if several Steam accounts played on this PC.
+
 
 A standalone damage analytics and incoming-damage forecast mod for [Slay the Spire 2](https://store.steampowered.com/app/2868840/).
 
