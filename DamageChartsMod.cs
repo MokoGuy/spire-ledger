@@ -91,9 +91,9 @@ public static partial class DamageChartsMod
     private static Key _hotkeyKey = Key.C;
     private static readonly List<Key> _hotkeyMods = new();
     private static string _hotkeySpec = "c";
-    // In-game toggles (config "forecast_hotkey" / "bars_hotkey"): V = incoming-damage forecast,
+    // In-game toggles (config "forecast_hotkey" / "bars_hotkey"): F = incoming-damage forecast,
     // B = damage dealt/taken chart. Keys the game doesn't bind (it uses A D E S X M, digits, arrows…).
-    private static (Key Key, List<Key> Mods, string Spec, bool Down) _forecastToggle = (Key.V, new(), "v", false);
+    private static (Key Key, List<Key> Mods, string Spec, bool Down) _forecastToggle = (Key.F, new(), "f", false);
     private static (Key Key, List<Key> Mods, string Spec, bool Down) _barsToggle = (Key.B, new(), "b", false);
     // I (anywhere): show or hide the boxes under offered cards (CardInsight).
     private static (Key Key, List<Key> Mods, string Spec, bool Down) _insightToggle = (Key.I, new(), "i", false);
@@ -227,7 +227,7 @@ public static partial class DamageChartsMod
             _barsCompact = !(root.TryGetProperty("bars_style", out var bst) && bst.ValueKind == JsonValueKind.String && bst.GetString() == "full");
             _barsDocked = !(root.TryGetProperty("bars_anchor", out var ban) && ban.ValueKind == JsonValueKind.String && ban.GetString() == "free");
             if (root.TryGetProperty("forecast", out var fc) && fc.ValueKind == JsonValueKind.False) _showForecast = false;
-            if (root.TryGetProperty("forecast_hotkey", out var fh) && fh.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, fh.GetString());
+            if (root.TryGetProperty("forecast_hotkey", out var fh) && fh.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, ForecastKey(fh.GetString()));
             if (root.TryGetProperty("bars_hotkey", out var bh) && bh.ValueKind == JsonValueKind.String) SetToggle(ref _barsToggle, bh.GetString());
             if (root.TryGetProperty("party_hotkey", out var ph) && ph.ValueKind == JsonValueKind.String) SetToggle(ref _partyToggle, ph.GetString());
             if (root.TryGetProperty("card_insight_hotkey", out var ih) && ih.ValueKind == JsonValueKind.String) SetToggle(ref _insightToggle, ih.GetString());
@@ -349,7 +349,7 @@ public static partial class DamageChartsMod
                 _showForecast = showForecast;
                 if (!_showForecast) { _forecast?.Hide(); _forecastLedger?.Hide(); }
             }
-            if (root.TryGetProperty("forecast_hotkey", out var fh2) && fh2.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, fh2.GetString());
+            if (root.TryGetProperty("forecast_hotkey", out var fh2) && fh2.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, ForecastKey(fh2.GetString()));
             if (root.TryGetProperty("bars_hotkey", out var bh2) && bh2.ValueKind == JsonValueKind.String) SetToggle(ref _barsToggle, bh2.GetString());
             if (root.TryGetProperty("party_hotkey", out var ph2) && ph2.ValueKind == JsonValueKind.String) SetToggle(ref _partyToggle, ph2.GetString());
             if (root.TryGetProperty("card_insight_hotkey", out var ih2) && ih2.ValueKind == JsonValueKind.String) SetToggle(ref _insightToggle, ih2.GetString());
@@ -388,7 +388,11 @@ public static partial class DamageChartsMod
         return edge;
     }
 
-    // V / B in combat: show or hide the forecast / the damage chart, saved to the config, with a toast.
+    // V was the forecast's key until 0.5.2, but the game holds V for its reaction wheel (input action
+    // "react_wheel" in the game's project settings): a "v" saved by an older version becomes "f".
+    private static string? ForecastKey(string? spec) => string.Equals(spec?.Trim(), "v", StringComparison.OrdinalIgnoreCase) ? "f" : spec;
+
+    // F / B in combat: show or hide the forecast / the damage chart, saved to the config, with a toast.
     private static void HandleToggles()
     {
         if (Pressed(ref _insightToggle) && SafeIsRunInProgress())

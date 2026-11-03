@@ -27,7 +27,7 @@
   in your deck (and upgraded), how often you played it this run, and its history — in how many of your
   past runs it was in your final deck and how many you won (from the game's own run history, so runs
   played without the mod count too), plus plays per run from Spire Ledger's run files.
-- **In-combat toggles**: `V` forecast, `B` damage chart, `N` co-op party damage next to the player list.
+- **In-combat toggles**: `F` forecast, `B` damage chart, `N` co-op party damage next to the player list.
 - **`I`** shows or hides the boxes under offered cards (`card_insight`, key `card_insight_hotkey`). They also
   hide under the deck view and other screens, and while a picked card flies to the deck.
   The forecast and chart sit above your character by default (`forecast_dock`: above / left / right / below).
@@ -214,12 +214,12 @@ on the Workshop page, so keep it in sync with the page (it is `public`). `script
 ```
 
 - `hotkey`: a bare key like `c` (the default) or `f9`, or modifier+key, e.g. `cmd+d`, `shift+d`, `alt+d`, `ctrl+d`.
-- `forecast`: set `false` to hide the incoming-damage forecast. In combat, **`V`** shows/hides it.
+- `forecast`: set `false` to hide the incoming-damage forecast. In combat, **`F`** shows/hides it (it was `V`, which the game uses for its reaction wheel).
 - `party_hud`: co-op only — each player's damage this fight and share of the party next to their name in
   the party list (top left): `"list"` (default) or `"off"`. In combat, **`N`** (`party_hotkey`) shows/hides it.
 - `forecast_dock`: where the docked forecast (and the chart stacked on it) sits around your character:
   `"above"` (default, keeps co-op teammates visible), `"left"`, `"right"` or `"below"`.
-- `forecast_hotkey` / `bars_hotkey`: the in-combat toggles for the forecast (default `v`) and the damage
+- `forecast_hotkey` / `bars_hotkey`: the in-combat toggles for the forecast (default `f`) and the damage
   chart (default `b`); same syntax as `hotkey`. Toggling saves `forecast` / `show_bars`.
 - `forecast_anchor`: `"player"` (default) docks the forecast beside your character; dragging it switches
   to `"free"` and remembers the spot.

@@ -134,15 +134,26 @@ def launch_local(args, timeout=120):
     sys.exit(f"API did not come up on {PORT}")
 
 
+TEST_PORTS = (15526, 15527, 15528, 15529)
+
+
 def quit_game(timeout=30):
+    """Ask each test instance to close itself through STS2MCP (only test instances run it, so this can't reach
+    the player's game); kill a process only as a fallback, and only one started from the test copy."""
     if not running():
         return
-    for pid in test_pids():
-        subprocess.run(["taskkill", "/PID", str(pid)], capture_output=True)
+    for port in TEST_PORTS:
+        req = urllib.request.Request(f"http://127.0.0.1:{port}/api/v1/singleplayer",
+                                     data=json.dumps({"action": "quit"}).encode(), method="POST",
+                                     headers={"Content-Type": "application/json"})
+        try:
+            urllib.request.urlopen(req, timeout=3).read()
+        except (urllib.error.URLError, OSError):
+            pass  # no instance on this port
     end = time.time() + timeout
     while running() and time.time() < end:
         time.sleep(1)
-    for pid in test_pids():
+    for pid in test_pids():  # hung test instance: kill it by pid, never by image name
         subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
     print("game closed")
 

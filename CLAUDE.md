@@ -121,7 +121,8 @@ text/visibility change needs the user's explicit OK **for that version**; this r
   `%APPDATA%/SlayTheSpire2/default`), co-op on one PC with `--fastmp host_custom` / `--fastmp join`.
   **Separate test install** (since 2026-11-03): `sts2.py` drives a copy of the game in `K:\STS2-test`
   (`STS2_TEST_DIR`; `sts2.py refresh-copy` after a game update), always Steam-less, with its own `mods/`
-  (dev SpireLedger + STS2MCP). `quit` only kills processes started from that copy. The player's Steam
+  (dev SpireLedger + STS2MCP). `quit` asks each test instance to close itself through STS2MCP's `quit` action (only test
+  instances run STS2MCP), then kills by pid only processes started from that copy. The player's Steam
   install has no manual mods: they subscribe on the Workshop. Never deploy into the Steam install.
   The test profile (`%APPDATA%\SlayTheSpire2\default\1`) holds copies of the player's saves; export
   `SPIRELEDGER_HISTORY_NETID=76561198040385943` to read that history as them (the instance plays as id 1).
