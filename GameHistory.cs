@@ -54,6 +54,10 @@ internal static class GameHistory
     public static ulong LocalId()
     {
         if (_localId is ulong cached) return cached;
+        // Test hook (as in CardInsight): a Steam-less test instance plays as id 1, so read the copied
+        // history as the player's own SteamID.
+        if (ulong.TryParse(System.Environment.GetEnvironmentVariable("SPIRELEDGER_HISTORY_NETID"), out var forced))
+            return (_localId = forced).Value;
         var counts = new Dictionary<ulong, int>();
         foreach (var run in Runs())
             foreach (var p in (run["players"] as JsonArray)?.OfType<JsonObject>() ?? Enumerable.Empty<JsonObject>())

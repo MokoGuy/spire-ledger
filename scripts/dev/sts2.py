@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Drive Slay the Spire 2 for local Spire Ledger tests through a locally built, hardened STS2MCP mod.
+r"""Drive Slay the Spire 2 for local Spire Ledger tests through a locally built, hardened STS2MCP mod.
 
 STS2MCP (github.com/Gennadiyev/STS2MCP, patched in K:/Projets/sts2-tools/STS2MCP on branch local-hardening)
 exposes game state and actions on http://127.0.0.1:15526. It is only copied into mods/ for a test session
@@ -8,9 +8,12 @@ exposes game state and actions on http://127.0.0.1:15526. It is only copied into
 Usage: python scripts/dev/sts2.py <command> [args]
   install | uninstall          copy/remove STS2_MCP.dll + manifest in the game's mods/ folder
   deploy                       copy the built SpireLedger.dll + manifest into mods/
-  launch | quit                start the game through Steam (waits for the API) / close all instances
-  launch-local [args...]       start a Steam-less instance (--force-steam off, saves under
-                               %APPDATA%/SlayTheSpire2/default) on STS2MCP_PORT, e.g. --fastmp host_custom
+  launch | quit                start / close the test copy (never the player's own game): Steam-less,
+                               saves under %APPDATA%/SlayTheSpire2/default, mod data in SpireLedger/local
+  launch-local [args...]       same, with game arguments, on STS2MCP_PORT, e.g. --fastmp host_custom
+  refresh-copy                 re-copy the Steam install into the test copy (after a game update)
+  The test copy is STS2_TEST_DIR (K:\STS2-test); SPIRELEDGER_HISTORY_NETID=<SteamID64> reads the copied
+  game history as that player (the Steam-less instance plays as id 1).
   Set STS2MCP_PORT to talk to another instance and STS2_API=multiplayer for co-op state/actions.
   state                        print the singleplayer state (markdown)
   act <action> [k=v ...]       POST an action, e.g. act play_card card_index=0 target=JAW_WORM_0
@@ -32,7 +35,10 @@ import time
 import urllib.error
 import urllib.request
 
-GAME_DIR = os.environ.get("STS2GameDir", r"D:\FastSteamLibrary\steamapps\common\Slay the Spire 2")
+# A separate copy of the game, launched Steam-less only: the player's own Steam install keeps the
+# Workshop version and is never touched (refresh the copy after a game update: refresh-copy).
+GAME_DIR = os.environ.get("STS2_TEST_DIR", r"K:\STS2-test")
+STEAM_GAME_DIR = os.environ.get("STS2GameDir", r"D:\FastSteamLibrary\steamapps\common\Slay the Spire 2")
 MODS = os.path.join(GAME_DIR, "mods")
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MCP_OUT = r"K:\Projets\sts2-tools\STS2MCP\out\STS2_MCP"
@@ -66,9 +72,25 @@ def api_up():
         return False
 
 
+def test_pids():
+    """Process ids of game instances started from the test copy; the player's own game is never listed."""
+    ps = ("Get-Process SlayTheSpire2 -ErrorAction SilentlyContinue | "
+          f"Where-Object {{ $_.Path -like '{GAME_DIR}\\*' }} | ForEach-Object {{ $_.Id }}")
+    out = subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True, text=True).stdout
+    return [int(x) for x in out.split() if x.isdigit()]
+
+
 def running():
-    out = subprocess.run(["tasklist", "/FI", "IMAGENAME eq SlayTheSpire2.exe"], capture_output=True, text=True).stdout
-    return "SlayTheSpire2.exe" in out
+    return bool(test_pids())
+
+
+def refresh_copy():
+    """Re-copy the Steam install into the test folder (after a game update), keeping the test mods/."""
+    if running():
+        sys.exit("a test instance is running; quit it first")
+    r = subprocess.run(["robocopy", STEAM_GAME_DIR, GAME_DIR, "/E", "/XD", "mods", "/NFL", "/NDL", "/NJH", "/NP", "/MT:8"])
+    os.makedirs(MODS, exist_ok=True)
+    print("test copy refreshed" if r.returncode < 8 else f"robocopy failed ({r.returncode})")
 
 
 def install():
@@ -94,16 +116,8 @@ def deploy():
 
 
 def launch(timeout=120):
-    if not running():
-        # Through Steam: launching the exe directly fails Steamworks init ("Erreur Steam").
-        os.startfile("steam://rungameid/2868840")
-    end = time.time() + timeout
-    while time.time() < end:
-        if api_up():
-            print("API up")
-            return
-        time.sleep(2)
-    sys.exit("API did not come up (is STS2MCP installed and the modded save profile chosen?)")
+    # Always Steam-less from the test copy: a Steam launch would start the player's own game.
+    launch_local([], timeout)
 
 
 def launch_local(args, timeout=120):
@@ -123,12 +137,13 @@ def launch_local(args, timeout=120):
 def quit_game(timeout=30):
     if not running():
         return
-    subprocess.run(["taskkill", "/IM", "SlayTheSpire2.exe"], capture_output=True)
+    for pid in test_pids():
+        subprocess.run(["taskkill", "/PID", str(pid)], capture_output=True)
     end = time.time() + timeout
     while running() and time.time() < end:
         time.sleep(1)
-    if running():
-        subprocess.run(["taskkill", "/F", "/IM", "SlayTheSpire2.exe"], capture_output=True)
+    for pid in test_pids():
+        subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
     print("game closed")
 
 
@@ -266,6 +281,8 @@ def main(argv):
         launch()
     elif cmd == "launch-local":
         launch_local(rest)
+    elif cmd == "refresh-copy":
+        refresh_copy()
     elif cmd == "quit":
         quit_game()
     elif cmd == "state":

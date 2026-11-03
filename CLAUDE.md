@@ -119,7 +119,12 @@ text/visibility change needs the user's explicit OK **for that version**; this r
   (K:/Projets/sts2-tools/STS2MCP, branch `local-hardening`: no CORS, `STS2MCP_PORT`, console, screenshot,
   custom_embark, key, click_node). Steam-less instances: `--force-steam off` (saves under
   `%APPDATA%/SlayTheSpire2/default`), co-op on one PC with `--fastmp host_custom` / `--fastmp join`.
-  STS2MCP may stay in `mods/` between sessions (user OK, 2026-11-01; it declares `affects_gameplay: false`).
+  **Separate test install** (since 2026-11-03): `sts2.py` drives a copy of the game in `K:\STS2-test`
+  (`STS2_TEST_DIR`; `sts2.py refresh-copy` after a game update), always Steam-less, with its own `mods/`
+  (dev SpireLedger + STS2MCP). `quit` only kills processes started from that copy. The player's Steam
+  install has no manual mods: they subscribe on the Workshop. Never deploy into the Steam install.
+  The test profile (`%APPDATA%\SlayTheSpire2\default\1`) holds copies of the player's saves; export
+  `SPIRELEDGER_HISTORY_NETID=76561198040385943` to read that history as them (the instance plays as id 1).
 
 ## Conventions & gotchas
 
@@ -129,6 +134,8 @@ text/visibility change needs the user's explicit OK **for that version**; this r
   references where avoidable — so the game can rename/move things without a hard crash. New "is a menu open?"
   checks go through `ResolveBlockers` + the `InstanceBool`/`InstanceMemberNotNull` helpers.
 - The overlay hides itself when a game menu/modal/overlay is on top (`IsBlockingUiOpen`/`IsMenuOpen`/`IsMapOpen`).
-- Config lives in `SpireLedger.conf` next to the DLL in `mods/` (auto-created on first run). Chart
-  position and settings are written back by `SaveConfig` when the chart is dragged.
+- Config lives in `SpireLedger.conf` in the mod's data folder `%APPDATA%\SlayTheSpire2\SpireLedger`
+  (`RunLedger.DataDir`; `SpireLedger/local` for a Steam-less instance, with its own `runs/`), auto-created on
+  first run; one left next to the DLL by an older version is copied over. Chart position and settings are
+  written back by `SaveConfig`.
 - Multiplayer: per-player slots throughout; the local player is found via `LocalContext.GetMe(runState)`.

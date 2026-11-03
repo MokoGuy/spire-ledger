@@ -178,9 +178,26 @@ public static partial class DamageChartsMod
 
     private static string? ConfigPath()
     {
-        string? dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        return dir == null ? null : Path.Combine(dir, ConfigFileName);
+        if (_configPath != null) return _configPath;
+        try
+        {
+            // In the mod's data folder, not next to the DLL: a Workshop install lives in Steam's download
+            // folder, which updates rewrite. A config left next to the DLL by an older version is moved over.
+            string dir = RunLedger.DataDir;
+            Directory.CreateDirectory(dir);
+            string path = Path.Combine(dir, ConfigFileName);
+            string? dllDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            string? old = dllDir == null ? null : Path.Combine(dllDir, ConfigFileName);
+            if (!File.Exists(path) && old != null && File.Exists(old))
+            {
+                File.Copy(old, path);
+                GD.Print($"[SpireLedger] config moved to {path}");
+            }
+            return _configPath = path;
+        }
+        catch { return null; }
     }
+    private static string? _configPath;
 
     private static void RememberConfigWriteTime(string path)
     {

@@ -18,18 +18,22 @@ Read with `CLAUDE.md` (architecture, testing) and `docs/PUBLISHING.md` (release 
 - Tools repo: `K:\Projets\sts2-tools\STS2MCP` (fork MokoGuy/STS2MCP, branch `local-hardening`, pushed).
   New: `STS2MCP_PLAYER_NAMES="Name1,Name2"` renames test players (net id 1 = host, 1000 = client);
   `custom_embark character=REGENT`; `mouse_click`, `key`, `click_node`, `screenshot`, `console`.
-- Test instance settings (`%APPDATA%\SlayTheSpire2\default\1\settings.save`): 1920×1080 window,
-  language `fra` (switch to `eng` for the English set).
+- **Separate test install** (2026-11-03): the game copy `K:\STS2-test` (own `mods/`: dev SpireLedger +
+  STS2MCP), launched Steam-less only by `sts2.py launch`; `sts2.py quit` kills only its processes. The
+  user's Steam install has an empty `mods/` and the user is subscribed on the Workshop: never deploy there.
+  Old manual files from it: `%APPDATA%\SlayTheSpire2\SpireLedger\backups\steam-mods-20261103`.
+- Test profile `%APPDATA%\SlayTheSpire2\default\1` = copies of the user's Steam `profile1` and
+  `modded/profile1` (previous test profile in `default\1.backup-20261103`); test mod data (config, runs)
+  in `SpireLedger\local`, seeded with copies of the user's run files. `export
+  SPIRELEDGER_HISTORY_NETID=76561198040385943` to see that history as the user. Window 1920×1080; clicks
+  use 1080p coordinates.
 - Co-op with characters: `$TEMP/coopchars.sh SEED HOSTCHAR CLIENTCHAR SHOTNAME` (temporary script; the
   same steps are in `scripts/dev/coop-start.sh` + `custom_embark character=`). Export
   `STS2MCP_PLAYER_NAMES` and `SPIRELEDGER_HISTORY_NETID` before launching.
 - `python -I scripts/dev/sts2.py autoplay FLOOR [pick=I]` (works, solo and co-op): plays the run (fights,
   map, events, rewards, rest, shop) to reach a floor — needed for badges (≥ 5 act-1 floors) and real
   per-card plays. Run it on both ports concurrently in co-op (`STS2_API=multiplayer`).
-- `sts2.py install` once (STS2MCP may stay in `mods/`, user OK 2026-11-01); never deploy
-  while the user's game runs (`tasklist | grep SlayTheSpire2`, check the process has no `--force-steam`).
-  Move test run files out of `%APPDATA%\SlayTheSpire2\SpireLedger\runs` afterwards (keep the user's
-  `*_2P_76561198040385943.json`).
+- `sts2.py install` / `deploy` write into the test copy only; `refresh-copy` after a game update.
 
 ## Other open items
 

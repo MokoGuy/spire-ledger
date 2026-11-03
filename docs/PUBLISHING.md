@@ -38,9 +38,9 @@ release, tag, push a release, or upload to the Workshop.
    powershell -ExecutionPolicy Bypass -File scripts\package-workshop.ps1                # Workshop upload
    ```
 7. Commit anything the scripts changed (manifest version, `mod_id.txt` on a first upload) and push.
-8. **Reinstall the local copy** (`python scripts/dev/sts2.py deploy`) once the manifest has the new version:
-   the mod reports the version from its installed `SpireLedger.json`, and a stale manual copy made the
-   user's PC announce 0.4.0 to a teammate on 0.5.0 (2026-11-03).
+8. **Reinstall the test copy** (`python scripts/dev/sts2.py deploy`) once the manifest has the new version:
+   the mod reports the version from its installed `SpireLedger.json` (a stale manual copy once made the
+   user's PC announce 0.4.0 to a teammate on 0.5.0). The user gets releases through the Workshop.
 
 ## Steam Workshop best practices
 
@@ -78,7 +78,8 @@ No official MegaCrit publishing guide beyond the uploader README was found (2026
 - **Legal agreement**: uploading implies accepting the Steam Workshop terms; if the account never did,
   the item may stay hidden until accepted on its page (user action).
 - **Don't mix installs**: a PC with the mod both subscribed on the Workshop and copied into `mods/` loads
-  two mods with the same id. The developer PC keeps the manual copy (`sts2.py deploy`); players subscribe.
+  two mods with the same id. Since 2026-11-03 the user's PC is subscribed like any player and its Steam
+  install has no manual mods; dev builds go only into the separate test copy (`K:\STS2-test`, see CLAUDE.md).
 - **Early Access breaks patches**: after every game update, re-test (Harmony targets may be renamed) and
   ship a fix quickly; bump `min_game_version` when you rely on the new game version.
 - **Co-op**: with `affects_gameplay: false` a friend without the mod (or with another version) can still

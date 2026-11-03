@@ -29,7 +29,24 @@ internal static class RunLedger
     private static JsonObject? _doc;
     private static (int Act, int Floor, string Encounter, string EncounterId) _combat;
 
-    public static string RunsDir => Path.Combine(OS.GetUserDataDir(), "SpireLedger", "runs");
+    // <user data>/SpireLedger: settings, run files, import state. A Steam-less instance (--force-steam off,
+    // the local test setup) uses SpireLedger/local instead, so tests never mix with the player's own data.
+    public static string DataDir => _dataDir ??= Path.Combine(OS.GetUserDataDir(), "SpireLedger", SteamLess() ? "local" : "");
+    private static string? _dataDir;
+
+    public static string RunsDir => Path.Combine(DataDir, "runs");
+
+    private static bool SteamLess()
+    {
+        try
+        {
+            var args = OS.GetCmdlineArgs();
+            for (int i = 0; i < args.Length; i++)
+                if (args[i] == "--force-steam=off" || (args[i] == "--force-steam" && i + 1 < args.Length && args[i + 1] == "off")) return true;
+        }
+        catch { }
+        return false;
+    }
 
     private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
 

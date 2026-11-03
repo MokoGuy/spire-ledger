@@ -202,7 +202,7 @@ update the same item. Before each update, bump `version` in `mod_manifest.json` 
 `workshop.json`. `visibility` in `workshop.json` is applied on **every** upload and overrides a change made
 on the Workshop page, so keep it in sync with the page (it is `public`). `scripts/package-workshop.sh` is the macOS equivalent inherited from Damage Charts.
 
-## Config — `SpireLedger.conf` (next to the DLL in `mods/`)
+## Config — `SpireLedger.conf` (in `%APPDATA%\SlayTheSpire2\SpireLedger`)
 
 ```json
 {

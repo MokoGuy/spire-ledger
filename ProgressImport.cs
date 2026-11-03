@@ -27,7 +27,7 @@ internal static class ProgressImport
     private static bool _mouseWasDown, _checkedThisSession;
     private static float _s = 1f;
 
-    private static string StatePath => Path.Combine(OS.GetUserDataDir(), "SpireLedger", "import.json");
+    private static string StatePath => Path.Combine(RunLedger.DataDir, "import.json");
 
     public static bool IsOpen => _layer != null && _layer.Visible;
 
