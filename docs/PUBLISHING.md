@@ -38,6 +38,9 @@ release, tag, push a release, or upload to the Workshop.
    powershell -ExecutionPolicy Bypass -File scripts\package-workshop.ps1                # Workshop upload
    ```
 7. Commit anything the scripts changed (manifest version, `mod_id.txt` on a first upload) and push.
+8. **Reinstall the local copy** (`python scripts/dev/sts2.py deploy`) once the manifest has the new version:
+   the mod reports the version from its installed `SpireLedger.json`, and a stale manual copy made the
+   user's PC announce 0.4.0 to a teammate on 0.5.0 (2026-11-03).
 
 ## Steam Workshop best practices
 
