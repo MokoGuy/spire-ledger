@@ -319,13 +319,16 @@ internal static class RunLedger
     }
 
     // All saved runs, newest first (for the Ledger screen).
-    public static List<JsonObject> LoadAll()
+    public static List<JsonObject> LoadAll() => LoadAll(RunsDir);
+
+    // From a folder resolved beforehand (RunsDir asks Godot, so a worker thread passes it in).
+    public static List<JsonObject> LoadAll(string dir)
     {
         var list = new List<JsonObject>();
         try
         {
-            if (!Directory.Exists(RunsDir)) return list;
-            foreach (var f in Directory.GetFiles(RunsDir, "*.json"))
+            if (!Directory.Exists(dir)) return list;
+            foreach (var f in Directory.GetFiles(dir, "*.json"))
             {
                 try { if (JsonNode.Parse(File.ReadAllText(f)) is JsonObject o) list.Add(o); }
                 catch { /* skip a damaged file */ }

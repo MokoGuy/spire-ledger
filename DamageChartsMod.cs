@@ -95,6 +95,8 @@ public static partial class DamageChartsMod
     // B = damage dealt/taken chart. Keys the game doesn't bind (it uses A D E S X M, digits, arrows…).
     private static (Key Key, List<Key> Mods, string Spec, bool Down) _forecastToggle = (Key.V, new(), "v", false);
     private static (Key Key, List<Key> Mods, string Spec, bool Down) _barsToggle = (Key.B, new(), "b", false);
+    // I (anywhere): show or hide the boxes under offered cards (CardInsight).
+    private static (Key Key, List<Key> Mods, string Spec, bool Down) _insightToggle = (Key.I, new(), "i", false);
     private static bool _hotkeyDownLast;
 
     // Saved chart position (null = default top-right until first placed/dragged).
@@ -211,6 +213,8 @@ public static partial class DamageChartsMod
             if (root.TryGetProperty("forecast_hotkey", out var fh) && fh.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, fh.GetString());
             if (root.TryGetProperty("bars_hotkey", out var bh) && bh.ValueKind == JsonValueKind.String) SetToggle(ref _barsToggle, bh.GetString());
             if (root.TryGetProperty("party_hotkey", out var ph) && ph.ValueKind == JsonValueKind.String) SetToggle(ref _partyToggle, ph.GetString());
+            if (root.TryGetProperty("card_insight_hotkey", out var ih) && ih.ValueKind == JsonValueKind.String) SetToggle(ref _insightToggle, ih.GetString());
+            if (root.TryGetProperty("card_insight", out var ci) && ci.ValueKind == JsonValueKind.False) CardInsight.Enabled = false;
             if (root.TryGetProperty("party_hud", out var pm) && pm.ValueKind == JsonValueKind.String) _partyHud = ParsePartyHud(pm.GetString());
             if (root.TryGetProperty("forecast_pos_x_frac", out var fpx) && fpx.TryGetSingle(out var ffx)) _fcPosXFrac = ffx;
             if (root.TryGetProperty("forecast_pos_y_frac", out var fpy) && fpy.TryGetSingle(out var ffy)) _fcPosYFrac = ffy;
@@ -241,8 +245,9 @@ public static partial class DamageChartsMod
         try
         {
             string? path = ConfigPath();
-            if (path == null || _bars == null) return;
-            var pos = _bars.PositionFraction;
+            if (path == null) return;
+            // Out of combat (an I toggle on a card choice) there is no chart yet: keep the saved position.
+            var pos = _bars != null ? _bars.PositionFraction : new Vector2(_posXFrac ?? 0f, _posYFrac ?? 0f);
             var dict = new Dictionary<string, object>
             {
                 ["enabled"] = true,
@@ -256,6 +261,8 @@ public static partial class DamageChartsMod
                 ["bars_hotkey"] = _barsToggle.Spec,
                 ["party_hud"] = PartyHudSpec(_partyHud),
                 ["party_hotkey"] = _partyToggle.Spec,
+                ["card_insight"] = CardInsight.Enabled,
+                ["card_insight_hotkey"] = _insightToggle.Spec,
                 ["forecast_pos_x_frac"] = _fcForecastPosRounded().X,
                 ["forecast_pos_y_frac"] = _fcForecastPosRounded().Y,
                 ["forecast_anchor"] = _fcAnchorPlayer ? "player" : "free",
@@ -278,7 +285,7 @@ public static partial class DamageChartsMod
             foreach (var kv in dict) merged[kv.Key] = JsonSerializer.SerializeToNode(kv.Value);
             File.WriteAllText(path, merged.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             RememberConfigWriteTime(path);
-            _posXFrac = pos.X; _posYFrac = pos.Y;
+            if (_bars != null) { _posXFrac = pos.X; _posYFrac = pos.Y; }
         }
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] save config failed: {ex.Message}"); }
     }
@@ -328,6 +335,8 @@ public static partial class DamageChartsMod
             if (root.TryGetProperty("forecast_hotkey", out var fh2) && fh2.ValueKind == JsonValueKind.String) SetToggle(ref _forecastToggle, fh2.GetString());
             if (root.TryGetProperty("bars_hotkey", out var bh2) && bh2.ValueKind == JsonValueKind.String) SetToggle(ref _barsToggle, bh2.GetString());
             if (root.TryGetProperty("party_hotkey", out var ph2) && ph2.ValueKind == JsonValueKind.String) SetToggle(ref _partyToggle, ph2.GetString());
+            if (root.TryGetProperty("card_insight_hotkey", out var ih2) && ih2.ValueKind == JsonValueKind.String) SetToggle(ref _insightToggle, ih2.GetString());
+            CardInsight.Enabled = !(root.TryGetProperty("card_insight", out var ci2) && ci2.ValueKind == JsonValueKind.False);
             if (root.TryGetProperty("party_hud", out var pm2) && pm2.ValueKind == JsonValueKind.String) _partyHud = ParsePartyHud(pm2.GetString());
             VfxMoments.Enabled = root.TryGetProperty("vfx_moments", out var vm) && vm.ValueKind == JsonValueKind.True;
         }
@@ -365,6 +374,12 @@ public static partial class DamageChartsMod
     // V / B in combat: show or hide the forecast / the damage chart, saved to the config, with a toast.
     private static void HandleToggles()
     {
+        if (Pressed(ref _insightToggle) && SafeIsRunInProgress())
+        {
+            CardInsight.Enabled = !CardInsight.Enabled;
+            Toast.Show($"{Loc.T(CardInsight.Enabled ? "insight_on" : "insight_off")}  ({_insightToggle.Spec.ToUpperInvariant()})");
+            SaveConfig();
+        }
         if (!SafeIsInCombat()) { Pressed(ref _forecastToggle); Pressed(ref _barsToggle); return; }
         if (Pressed(ref _forecastToggle))
         {
@@ -765,7 +780,7 @@ public static partial class DamageChartsMod
             HandleHotkey();
             HandleToggles();
             HandlePartyToggle();
-            CardInsight.Tick(SafeIsInCombat(), id => _run.CardPlayCount(_localSlot, id));
+            CardInsight.Tick(SafeIsInCombat(), id => _run.CardPlayCount(_localSlot, id), IsMenuOpen(), TopOverlay());
             Toast.Tick();
             LedgerScreen.Tick();
             ProgressImport.Tick(SafeIsRunInProgress());
@@ -1481,6 +1496,18 @@ public static partial class DamageChartsMod
             ResolveBlockers();
             var stack = GetInstance(_tOverlay);
             return stack?.GetType().GetMethod("Peek", Type.EmptyTypes)?.Invoke(stack, null)?.GetType().Name;
+        }
+        catch { return null; }
+    }
+
+    // The top overlay screen itself (NOverlayStack.Instance.Peek()), or null if none.
+    private static Node? TopOverlay()
+    {
+        try
+        {
+            ResolveBlockers();
+            var stack = GetInstance(_tOverlay);
+            return stack?.GetType().GetMethod("Peek", Type.EmptyTypes)?.Invoke(stack, null) as Node;
         }
         catch { return null; }
     }

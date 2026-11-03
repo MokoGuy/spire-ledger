@@ -28,6 +28,8 @@
   past runs it was in your final deck and how many you won (from the game's own run history, so runs
   played without the mod count too), plus plays per run from Spire Ledger's run files.
 - **In-combat toggles**: `V` forecast, `B` damage chart, `N` co-op party damage next to the player list.
+- **`I`** shows or hides the boxes under offered cards (`card_insight`, key `card_insight_hotkey`). They also
+  hide under the deck view and other screens, and while a picked card flies to the deck.
   The forecast and chart sit above your character by default (`forecast_dock`: above / left / right / below).
 - The mod's own labels follow the game language (French / English).
 

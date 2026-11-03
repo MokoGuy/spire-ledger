@@ -23,14 +23,19 @@ internal static class GameHistory
 
     // Every distinct run, newest first. The same run can sit in several profiles (copied progress), so runs
     // are counted once by start time + seed.
-    public static List<JsonObject> Runs()
+    public static List<JsonObject> Runs() => _runs ??= Load(Files().ToList());
+
+    // The history files, resolved on the main thread (it asks the game's SaveManager); Load can then run on
+    // a worker thread, so the first card choice of a session doesn't stall on reading every run.
+    public static List<string> HistoryFiles() => Files().ToList();
+
+    public static List<JsonObject> Load(IEnumerable<string> files)
     {
-        if (_runs != null) return _runs;
         var list = new List<JsonObject>();
         var seen = new HashSet<string>();
         try
         {
-            foreach (var file in Files())
+            foreach (var file in files)
             {
                 try
                 {
@@ -41,7 +46,7 @@ internal static class GameHistory
         }
         catch (Exception ex) { GD.PrintErr($"[SpireLedger] game history read failed: {ex.Message}"); }
         list.Sort((a, b) => ((long?)b["start_time"] ?? 0).CompareTo((long?)a["start_time"] ?? 0));
-        return _runs = list;
+        return list;
     }
 
     // The local player's id in the history files, outside a run too: the account folder's name (the SteamID64
@@ -61,8 +66,10 @@ internal static class GameHistory
     }
 
     // The given player's runs (abandoned ones left out), newest first.
-    public static List<HistRun> For(ulong playerId)
-        => Runs().Select(r => BuildStats.Parse(r, playerId)).Where(r => r != null).Select(r => r!).ToList();
+    public static List<HistRun> For(ulong playerId) => For(Runs(), playerId);
+
+    public static List<HistRun> For(IEnumerable<JsonObject> runs, ulong playerId)
+        => runs.Select(r => BuildStats.Parse(r, playerId)).Where(r => r != null).Select(r => r!).ToList();
 
     private static DirectoryInfo? AccountDir()
     {

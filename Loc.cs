@@ -105,6 +105,8 @@ internal static class Loc
         ["bars_off"] = ("Damage chart hidden", "Graphique des dégâts masqué"),
         ["party_hud_list"] = ("Party damage shown", "Dégâts de l'équipe affichés"),
         ["party_hud_off"] = ("Party damage hidden", "Dégâts de l'équipe masqués"),
+        ["insight_on"] = ("Card info shown", "Infos sous les cartes affichées"),
+        ["insight_off"] = ("Card info hidden", "Infos sous les cartes masquées"),
         ["ci_not_in_deck"] = ("Not in your deck", "Pas dans votre deck"),
         ["ci_in_deck"] = ("In your deck: {0}", "Dans votre deck : {0}"),
         ["ci_in_deck_up"] = ("In your deck: {0} ({1} upgraded)", "Dans votre deck : {0} (dont {1} améliorées)"),
