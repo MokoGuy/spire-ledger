@@ -54,6 +54,12 @@ minLoss      = attackLoss + guaranteedUnblockable        (DoTs + Infection)
 maxLoss      = minLoss + conditional (self-damage-if-played, conditional attacks)
 ```
 
+**Per-loss modifiers.** Some effects change each separate HP loss, so with any of them the
+forecast replays the hits one by one (DoTs and self-damage first, then enemy attacks in order;
+blockable hits eat the pool first): Intangible / Slippery cap each loss at 1, **Tungsten Rod**
+takes 1 off each loss (never below 0), then **Buffer** cancels the next losses while it has
+charges. Not modeled: Beating Remnant's per-turn cap.
+
 Hidden intents can't be bounded numerically, so they never inflate `max`; they only raise the
 `+?` flag (and keep the turn from reading as `Safe`).
 

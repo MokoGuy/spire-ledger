@@ -244,3 +244,59 @@ public class HandBiteTests
         Assert.Equal(3, blocked.MinLoss);
     }
 }
+
+// Per-loss HP modifiers: Tungsten Rod, Intangible / Slippery, Buffer (HpLossMods).
+public class HpLossModsTests
+{
+    private static ForecastItem Attack(int perHit, int hits = 1) =>
+        new("E", ForecastKind.Attack, hits, perHit, blockable: true, conditional: false);
+    private static ForecastItem Dot(int amount) =>
+        new("Bleed", ForecastKind.Dot, 1, amount, blockable: false, conditional: false);
+    private static ForecastItem SelfCard(int amount) =>
+        new("Offering", ForecastKind.SelfCard, 1, amount, blockable: false, conditional: true);
+
+    private static ForecastResult RunMods(int hp, int block, HpLossMods mods, params ForecastItem[] items) =>
+        DamageForecast.Compute(new ForecastInputs(hp, 75, block, 0, false, new List<ForecastItem>(items), 0, mods));
+
+    [Fact]
+    public void TungstenRod_TakesOneOffEachLoss()
+    {
+        // Reported in game: 13 HP, 11 incoming with Tungsten Rod -> showed 2 left, ended on 3 (one hit).
+        Assert.Equal(10, RunMods(13, 0, new HpLossMods(false, 1, 0), Attack(11)).MinLoss);
+        // Per hit, not per turn: 3 hits of 4 cost 3 x 3.
+        Assert.Equal(9, RunMods(30, 0, new HpLossMods(false, 1, 0), Attack(4, 3)).MinLoss);
+        // A hit of 1 costs nothing; a fully blocked hit is not an HP loss at all.
+        Assert.Equal(0, RunMods(30, 0, new HpLossMods(false, 1, 0), Attack(1, 2)).MinLoss);
+        Assert.Equal(1, RunMods(30, 10, new HpLossMods(false, 1, 0), Attack(6, 2)).MinLoss); // 6 blocked, 2 left -> 1
+    }
+
+    [Fact]
+    public void TungstenRod_AppliesToDotsAndConditionalSelfDamage()
+    {
+        var r = RunMods(30, 0, new HpLossMods(false, 1, 0), Dot(3), SelfCard(6), Attack(5));
+        Assert.Equal(2 + 4, r.MinLoss);
+        Assert.Equal(2 + 4 + 5, r.MaxLoss);
+    }
+
+    [Fact]
+    public void Intangible_CapsEachLossAtOne()
+    {
+        Assert.Equal(3, RunMods(30, 0, new HpLossMods(true, 0, 0), Attack(20, 3)).MinLoss);
+        Assert.Equal(0, RunMods(30, 0, new HpLossMods(true, 1, 0), Attack(20, 3)).MinLoss); // with Tungsten Rod
+    }
+
+    [Fact]
+    public void Buffer_CancelsTheNextLosses()
+    {
+        // Buffer 1: the first hit that would cost HP is cancelled, blocked hits don't use it.
+        Assert.Equal(7, RunMods(30, 5, new HpLossMods(false, 0, 1), Attack(5), Attack(7), Attack(7)).MinLoss);
+    }
+
+    [Fact]
+    public void NoModifiers_KeepsThePooledResult()
+    {
+        var r = RunMods(30, 4, default, Attack(3, 3), Dot(2));
+        Assert.Equal(5 + 2, r.MinLoss);
+    }
+}
+

@@ -23,6 +23,7 @@ internal static class ForecastReader
         var items = new List<ForecastItem>();
         int hp = 0, maxHp = 0, block = 0, ostyAbsorb = 0, endTurnBlock = 0;
         bool hasHidden = false;
+        HpLossMods lossMods = default;
 
         try
         {
@@ -35,6 +36,7 @@ internal static class ForecastReader
                 block = GetInt(me, "Block", "CurrentBlock");
                 ostyAbsorb = ReadOstyAbsorb(mePlayer!);
                 endTurnBlock = ReadEndTurnBlock(cs, mePlayer!, me, block);
+                lossMods = ReadLossMods(mePlayer!, me);
                 if (Debug && !_dumped) { _dumped = true; DumpDiagnostics(cs, players, localSlot, me); }
                 ReadDots(me, items);
                 ReadSelfDamageCards(cs, players, localSlot, items);
@@ -54,7 +56,49 @@ internal static class ForecastReader
         }
         catch { }
 
-        return new ForecastInputs(hp, maxHp, block, ostyAbsorb, hasHidden, items, endTurnBlock);
+        return new ForecastInputs(hp, maxHp, block, ostyAbsorb, hasHidden, items, endTurnBlock, lossMods);
+    }
+
+    // The player's per-loss HP modifiers (ModifyHpLostAfterOsty hooks in sts2.dll v0.107.1):
+    //   TungstenRod      relic: each loss minus DynamicVars["HpLossReduction"] (1), never below 0
+    //   IntangiblePower / SlipperyPower: each loss becomes 1
+    //   BufferPower      (Late hook): the next Amount losses become 0
+    // Not modeled: BeatingRemnant / HardenedShell (per-turn caps that depend on damage already taken).
+    private static HpLossMods ReadLossMods(Player mePlayer, Creature me)
+    {
+        bool capAtOne = false;
+        int reduction = 0, buffer = 0;
+        try
+        {
+            if (GetProp(me, "Powers") is IEnumerable powers)
+                foreach (var p in powers)
+                {
+                    string tn = p?.GetType().Name ?? "";
+                    if (tn == "IntangiblePower" || tn == "SlipperyPower") capAtOne = true;
+                    else if (tn == "BufferPower") buffer += Math.Max(0, GetInt(p!, "Amount"));
+                }
+        }
+        catch { }
+        try
+        {
+            if (GetProp(mePlayer, "Relics") is IEnumerable relics)
+                foreach (var rel in relics)
+                {
+                    if (rel == null || rel.GetType().Name != "TungstenRod") continue;
+                    int n = 1;
+                    try
+                    {
+                        // DynamicVarSet indexer by name; keep 1 (the game's value) if it can't be read.
+                        if (GetProp(rel, "DynamicVars") is { } dv
+                            && dv.GetType().GetProperty("Item", new[] { typeof(string) })?.GetValue(dv, new object[] { "HpLossReduction" }) is { } v)
+                            n = GetNum(v, "BaseValue", "Value", "IntValue") is int r && r > 0 ? r : 1;
+                    }
+                    catch { }
+                    reduction += Math.Max(0, n);
+                }
+        }
+        catch { }
+        return new HpLossMods(capAtOne, reduction, buffer);
     }
 
     // Mirrors the game's own check (NHealthBar.IsPoisonLethal, which turns the enemy's HP bar green):

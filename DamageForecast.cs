@@ -35,6 +35,35 @@ internal readonly struct ForecastItem
     public int Total => Hits * DamagePerHit;
 }
 
+// The player's modifiers that apply to each separate HP loss (the game's ModifyHpLostAfterOsty hooks), in
+// the order the forecast applies them: Intangible/Slippery cap a loss at 1, Tungsten Rod takes N off it,
+// then Buffer cancels it (ModifyHpLostAfterOstyLate) while charges last.
+internal readonly struct HpLossMods
+{
+    public readonly bool CapAtOne;
+    public readonly int Reduction;
+    public readonly int BufferCharges;
+
+    public HpLossMods(bool capAtOne, int reduction, int bufferCharges)
+    {
+        CapAtOne = capAtOne;
+        Reduction = Math.Max(0, reduction);
+        BufferCharges = Math.Max(0, bufferCharges);
+    }
+
+    public bool Any => CapAtOne || Reduction > 0 || BufferCharges > 0;
+
+    // One loss after the modifiers; a Buffer charge is spent only on a loss that would still cost HP.
+    public int Apply(int amount, ref int buffer)
+    {
+        if (amount <= 0) return 0;
+        if (CapAtOne) amount = 1;
+        amount = Math.Max(0, amount - Reduction);
+        if (amount > 0 && buffer > 0) { buffer--; return 0; }
+        return amount;
+    }
+}
+
 internal readonly struct ForecastInputs
 {
     public readonly int CurrentHp;
@@ -44,10 +73,12 @@ internal readonly struct ForecastInputs
     public readonly bool HasHidden;
     public readonly IReadOnlyList<ForecastItem> Items;
     public readonly int EndTurnBlock; // block gained at the end of your turn (Plating, Orichalcum, ...), before enemies act
+    public readonly HpLossMods LossMods;
 
     public ForecastInputs(int currentHp, int maxHp, int block, int ostyAbsorb, bool hasHidden, IReadOnlyList<ForecastItem> items,
-                          int endTurnBlock = 0)
+                          int endTurnBlock = 0, HpLossMods lossMods = default)
     {
+        LossMods = lossMods;
         CurrentHp = currentHp;
         MaxHp = maxHp;
         Block = block;
@@ -145,8 +176,34 @@ internal static class DamageForecast
 
         int incoming = guaranteedAttack + guaranteedUnblockable;
 
+        // Per-loss modifiers (Tungsten Rod, Intangible, Buffer) change each hit, so the pooled total no
+        // longer holds: replay the hits one by one.
+        if (inp.LossMods.Any)
+        {
+            minLoss = Replay(items, block, osty, inp.LossMods, withConditional: false);
+            maxLoss = Replay(items, block, osty, inp.LossMods, withConditional: true);
+        }
+
         return new ForecastResult(incoming, mitigated, minLoss, maxLoss,
             block, osty, inp.CurrentHp, inp.MaxHp, inp.HasHidden, items, MaxHpLoss(items, pool));
+    }
+
+    // HP lost hit by hit, in the order the game deals it: end-of-turn and start-of-turn losses (DoTs,
+    // self-damage), then enemy attacks in enemy order. Blockable hits eat the block + Osty pool first; each
+    // HP loss left then goes through the player's per-loss modifiers.
+    private static int Replay(IReadOnlyList<ForecastItem> items, int block, int osty, HpLossMods mods, bool withConditional)
+    {
+        int pool = block + osty, buffer = mods.BufferCharges, loss = 0;
+        var chosen = items.Where(i => i.Kind != ForecastKind.Hidden && (withConditional || !i.Conditional));
+        foreach (var it in chosen.Where(i => i.Kind != ForecastKind.Attack).Concat(chosen.Where(i => i.Kind == ForecastKind.Attack)))
+            for (int h = 0; h < it.Hits; h++)
+            {
+                int d = it.DamagePerHit;
+                if (d <= 0) break;
+                if (it.Blockable) { int absorbed = Math.Min(pool, d); pool -= absorbed; d -= absorbed; }
+                loss += mods.Apply(d, ref buffer);
+            }
+        return loss;
     }
 
     // Permanent max HP loss: replay the guaranteed blockable hits against the block pool, in order —
